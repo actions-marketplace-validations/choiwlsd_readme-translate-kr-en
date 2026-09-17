@@ -1,6 +1,11 @@
 <!-- readme-translate-kr-en:start -->
 <p align="right">
-  <a href="./README.md">English</a> · <a href="./README.ko.md">한국어</a>
+  <sub>
+    🌐 Language&nbsp;&nbsp;
+    <a href="./README.md">English</a>
+    &nbsp;|&nbsp;
+    <a href="./README.ko.md">한국어</a>
+  </sub>
 </p>
 <!-- readme-translate-kr-en:end -->
 
