@@ -70,8 +70,8 @@ README content is processed on the machine running `readme-translate-kr-en` and 
 
 ### Requirements
 
-- Node.js 20+
-- Python 3.10+
+- `Node.js` 20+
+- `Python` 3.10+
 
 Clone the repository and create a Python virtual environment before installing the translation dependencies.
 
