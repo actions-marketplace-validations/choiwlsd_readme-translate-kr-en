@@ -1,10 +1,10 @@
 {
-  "name": "readme-bilingual",
+  "name": "readme-translate-kr-en",
   "version": "0.2.0",
-  "description": "Free local-first English/Korean README sync CLI and GitHub Action. No API key required.",
+  "description": "Free local-first English/Korean README translation CLI and GitHub Action. No API key required.",
   "type": "module",
   "bin": {
-    "readme-bilingual": "./src/cli.js"
+    "readme-translate-kr-en": "./src/cli.js"
   },
   "scripts": {
     "test": "node --test && python3 -m unittest discover -s test -p '*_test.py'",
@@ -13,6 +13,14 @@
   "engines": {
     "node": ">=20"
   },
-  "keywords": ["readme", "translation", "github-action", "korean", "i18n", "local-first"],
+  "keywords": [
+    "readme",
+    "translation",
+    "github-action",
+    "korean",
+    "english",
+    "i18n",
+    "local-first"
+  ],
   "license": "MIT"
 }
