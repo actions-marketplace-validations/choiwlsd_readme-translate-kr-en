@@ -1,12 +1,12 @@
-<!-- readme-bilingual:start -->
+<!-- readme-translate-kr-en:start -->
 <p align="right">
   <a href="./README.md">English</a> · <a href="./README.ko.md">한국어</a>
 </p>
-<!-- readme-bilingual:end -->
+<!-- readme-translate-kr-en:end -->
 
 # 리드미-이중언어
 
-GitHub를 위한 무료 로컬 퍼스트 영어  한국어 README 동기화입니다.
+GitHub를 위한 무료 로컬 퍼스트 영어 한국어 README 동기화입니다.
 
 **API 키 없음. 유료 AI API** 없음.
 
@@ -27,17 +27,17 @@ GitHub를 위한 무료 로컬 퍼스트 영어  한국어 README 동기화입�
 
 `readme-bilingual`는 각 번역 방향에 대해 전용 NLLB 기반 모델을 사용한다.
 
-| 방향        | 모델                        |
-| ---------------- | ---------------------------- |
+| 방향          | 모델                         |
+| ------------- | ---------------------------- |
 | 영어 → 한국어 | `NHNDQ/nllb-finetuned-en2ko` |
 | 한국어 → 영어 | `NHNDQ/nllb-finetuned-ko2en` |
 
 NLLB 언어 코드:
 
-| 언어 | 코드       |
-| -------- | ---------- |
-| 영어.  | `eng_Latn` |
-| 한국어.   | `kor_Hang` |
+| 언어    | 코드       |
+| ------- | ---------- |
+| 영어.   | `eng_Latn` |
+| 한국어. | `kor_Hang` |
 
 요청한 번역 방향에 필요한 모델만 로드됩니다.
 
@@ -147,7 +147,7 @@ README.md
 
 - 울타리 코드 블록
 - 인라인 코드
-- 코드 블록 내부의  명령
+- 코드 블록 내부의 명령
 - URL
 - 마크다운 링크
 - 이미지
