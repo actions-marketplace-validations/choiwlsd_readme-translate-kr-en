@@ -17,7 +17,6 @@ inputs:
 
 runs:
   using: composite
-
   steps:
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -46,19 +45,21 @@ runs:
     - name: Install Node.js dependencies
       shell: bash
       run: |
-        if [ -f "$GITHUB_ACTION_PATH/package-lock.json" ]; then
-          cd "$GITHUB_ACTION_PATH"
+        cd "$GITHUB_ACTION_PATH"
+
+        if [ -f package-lock.json ]; then
           npm ci --omit=dev
-        elif [ -f "$GITHUB_ACTION_PATH/package.json" ]; then
-          cd "$GITHUB_ACTION_PATH"
+        elif [ -f package.json ]; then
           npm install --omit=dev
         fi
 
     - name: Sync README translation
       shell: bash
+      env:
+        INPUT_FROM: ${{ inputs.from }}
       run: |
-        if [ -n "${{ inputs.from }}" ]; then
-          node "$GITHUB_ACTION_PATH/src/cli.js" sync --from "${{ inputs.from }}"
+        if [ -n "$INPUT_FROM" ]; then
+          node "$GITHUB_ACTION_PATH/src/cli.js" sync --from "$INPUT_FROM"
         else
           node "$GITHUB_ACTION_PATH/src/cli.js" sync
         fi
