@@ -1,18 +1,18 @@
 <!-- readme-translate-kr-en:start -->
 <p align="right">
-  <a href="./README.md">영어</a> · <a href="./README.ko.md">한국어</a>
+  <a href="./README.md">English</a> · <a href="./README.ko.md">한국어</a>
 </p>
 <!-- readme-translate-kr-en:end -->
 
 # readme-translate-kr-en
 
-GitHub를 위한 무료 로컬 퍼스트 영어 한국어 README 번역 및 동기화.
+GitHub를 위한 무료 로컬 퍼스트 영어  한국어 README 번역 및 동기화.
 
 **API 키 없음. 유료 AI API** 없음.
 
 `readme-translate-kr-en`는 오픈 소스 기계 번역 모델을 사용하여 README 콘텐츠를 로컬로 번역합니다. 번역은 CLI 또는 GitHub 액션 러너를 실행하는 기계에서 전적으로 실행됩니다.
 
-## 동작하는 방법
+## 그게 하는 거.
 
 - `README.md` 및 `README.ko.md`를 동기화한다
 - 영어 → 한국어 및 한국어 → 영어 번역을 지원합니다.
@@ -27,17 +27,17 @@ GitHub를 위한 무료 로컬 퍼스트 영어 한국어 README 번역 및 동�
 
 `readme-translate-kr-en`는 각 번역 방향에 대해 전용 NLLB 기반 모델을 사용한다.
 
-| 방향          | 모델                         |
-| ------------- | ---------------------------- |
+| 방향        | 모델                        |
+| ---------------- | ---------------------------- |
 | 영어 → 한국어 | `NHNDQ/nllb-finetuned-en2ko` |
 | 한국어 → 영어 | `NHNDQ/nllb-finetuned-ko2en` |
 
 NLLB 언어 코드:
 
-| 언어    | 코드       |
-| ------- | ---------- |
-| 영어.   | `eng_Latn` |
-| 한국어. | `kor_Hang` |
+| 언어 | 코드       |
+| -------- | ---------- |
+| 영어.  | `eng_Latn` |
+| 한국어.   | `kor_Hang` |
 
 요청한 번역 방향에 필요한 모델만 로드됩니다.
 
@@ -174,7 +174,7 @@ README.md
 
 - 울타리 코드 블록
 - 인라인 코드
-- 코드 블록 내부의 명령
+- 코드 블록 내부의  명령
 - URL
 - 마크다운 링크
 - 이미지
