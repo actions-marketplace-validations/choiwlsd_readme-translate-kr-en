@@ -19,14 +19,102 @@ Free, local-first English ↔ Korean README translation and synchronization for 
 
 ## What it does
 
-- Synchronizes `README.md` and `README.ko.md`
 - Supports English → Korean and Korean → English translation
+- Automatically creates or updates the translated README
+- Supports custom source and target README filenames
+- Automatically determines the target filename when `target-file` is omitted
 - Uses a dedicated translation model for each direction
 - Adds GitHub-friendly English / 한국어 navigation
 - Preserves fenced code blocks, inline code, URLs, links, badges, and HTML as much as possible
 - Runs locally without a translation API
 - Works as both a CLI and a reusable GitHub Action
-- Automatically detects which README changed when `--from` is omitted
+- Automatically detects which README changed when `--from` is omitted where possible
+
+## README file naming
+
+By default, `readme-translate-kr-en` can automatically determine the translated README filename from the source language.
+
+For example:
+
+```text
+from: en
+source-file: README.md
+target-file: empty
+
+→ README.ko.md
+```
+
+and:
+
+```text
+from: ko
+source-file: README.md
+target-file: empty
+
+→ README.en.md
+```
+
+This means both of the following project structures are supported.
+
+English as the main README:
+
+```text
+README.md
+README.ko.md
+```
+
+Korean as the main README:
+
+```text
+README.md
+README.en.md
+```
+
+Custom filenames can also be used by explicitly specifying both the source and target files.
+
+For example:
+
+```text
+docs/README.md
+docs/README.en.md
+```
+
+or:
+
+```text
+README_EN.md
+README_KR.md
+```
+
+When `target-file` is omitted, the translated file is created in the same directory as the source file.
+
+Examples:
+
+```text
+README.md
+→ README.ko.md
+
+docs/README.md
+→ docs/README.ko.md
+
+guide.md
+→ guide.ko.md
+```
+
+for English → Korean translation.
+
+For Korean → English translation:
+
+```text
+README.md
+→ README.en.md
+
+docs/README.md
+→ docs/README.en.md
+
+guide.md
+→ guide.en.md
+```
 
 ## Translation models
 
@@ -79,7 +167,9 @@ Clone the repository and create a Python virtual environment before installing t
 
 ```powershell
 python -m venv .venv
+
 .venv\Scripts\Activate.ps1
+
 python -m pip install -r requirements.txt
 ```
 
@@ -89,16 +179,22 @@ Initialize the bilingual README files:
 node ./src/cli.js init
 ```
 
-Translate English → Korean:
+Translate an English `README.md` to `README.ko.md`:
 
 ```powershell
-node ./src/cli.js sync --from en
+node ./src/cli.js sync --from en --source README.md
 ```
 
-Translate Korean → English:
+Translate a Korean `README.md` to `README.en.md`:
 
 ```powershell
-node ./src/cli.js sync --from ko
+node ./src/cli.js sync --from ko --source README.md
+```
+
+Specify the target filename manually:
+
+```powershell
+node ./src/cli.js sync --from ko --source README.md --target README.en.md
 ```
 
 Automatically detect the translation direction:
@@ -107,7 +203,7 @@ Automatically detect the translation direction:
 node ./src/cli.js sync
 ```
 
-When `--from` is omitted, the CLI checks the latest Git commit and attempts to determine whether `README.md` or `README.ko.md` was changed.
+When `--from` is omitted, the CLI checks the latest Git commit and attempts to determine which configured README changed.
 
 ## npm usage
 
@@ -122,13 +218,36 @@ npx readme-translate-kr-en init
 Translate English → Korean:
 
 ```bash
-npx readme-translate-kr-en sync --from en
+npx readme-translate-kr-en sync --from en --source README.md
+```
+
+If `--target` is omitted:
+
+```text
+README.md
+→ README.ko.md
 ```
 
 Translate Korean → English:
 
 ```bash
-npx readme-translate-kr-en sync --from ko
+npx readme-translate-kr-en sync --from ko --source README.md
+```
+
+If `--target` is omitted:
+
+```text
+README.md
+→ README.en.md
+```
+
+Specify a custom target file:
+
+```bash
+npx readme-translate-kr-en sync \
+  --from ko \
+  --source docs/README.md \
+  --target docs/README.en.md
 ```
 
 Automatically detect the translation direction:
@@ -139,24 +258,32 @@ npx readme-translate-kr-en sync
 
 The `init` command creates or updates the language navigation at the top of the README files.
 
-After initialization, both README files contain navigation like this:
+After initialization, README files contain navigation such as:
 
 ```text
-English · 한국어
+English | 한국어
 ```
 
-`English` links to `README.md`, and `한국어` links to `README.ko.md`.
+The links are generated from the configured English and Korean README paths.
 
 ## How it works
 
 English → Korean:
 
 ```text
-README.md
+source file
    ↓
 Markdown protection
    ↓
 English → Korean model
+   ↓
+target file
+```
+
+Example:
+
+```text
+README.md
    ↓
 README.ko.md
 ```
@@ -164,13 +291,21 @@ README.ko.md
 Korean → English:
 
 ```text
-README.ko.md
+source file
    ↓
 Markdown protection
    ↓
 Korean → English model
    ↓
+target file
+```
+
+Example:
+
+```text
 README.md
+   ↓
+README.en.md
 ```
 
 Before translation, `readme-translate-kr-en` separates translatable text from Markdown elements that should remain unchanged.
@@ -196,13 +331,86 @@ Only human-readable text is sent through the translation model where possible.
 
 No translation API key or API secret is required.
 
-Create a workflow such as:
+The Action supports the following inputs:
+
+| Input            | Description                                   | Default                  |
+| ---------------- | --------------------------------------------- | ------------------------ |
+| `from`           | Source language: `en` or `ko`                 | Auto-detect              |
+| `source-file`    | README file used as the translation source    | `README.md`              |
+| `target-file`    | Translated README path                        | Automatically determined |
+| `python-version` | Python version used by the translation engine | `3.11`                   |
+
+### English README as the main README
+
+If your project uses:
+
+```text
+README.md
+README.ko.md
+```
+
+use:
+
+```yaml
+- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
+  with:
+    from: en
+    source-file: README.md
+```
+
+Because `target-file` is omitted, the Action automatically uses:
+
+```text
+README.ko.md
+```
+
+### Korean README as the main README
+
+If your project uses:
+
+```text
+README.md
+README.en.md
+```
+
+use:
+
+```yaml
+- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
+  with:
+    from: ko
+    source-file: README.md
+```
+
+Because `target-file` is omitted, the Action automatically uses:
+
+```text
+README.en.md
+```
+
+### Custom source and target files
+
+You can explicitly define both files:
+
+```yaml
+- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
+  with:
+    from: ko
+    source-file: docs/README.md
+    target-file: docs/README.en.md
+```
+
+This is useful when your repository uses a custom README naming convention.
+
+### Example workflow
+
+Create:
 
 ```text
 .github/workflows/readme-translate.yml
 ```
 
-and add:
+For a project where English is the main README:
 
 ```yaml
 name: Sync bilingual README
@@ -219,6 +427,7 @@ permissions:
 
 jobs:
   sync:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
@@ -231,6 +440,7 @@ jobs:
         uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
         with:
           from: en
+          source-file: README.md
 
       - name: Commit translation
         run: |
@@ -244,35 +454,55 @@ jobs:
           git push
 ```
 
+For a project where Korean is the main README:
+
+```yaml
+name: Sync bilingual README
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+      - README.en.md
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Translate README
+        uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
+        with:
+          from: ko
+          source-file: README.md
+
+      - name: Commit translation
+        run: |
+          if git diff --quiet -- README.md README.en.md; then exit 0; fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md README.en.md
+          git commit -m "docs: sync bilingual README"
+          git push
+```
+
 Replace `YOUR_GITHUB_NAME` with the GitHub username or organization that owns the `readme-translate-kr-en` repository.
 
-### English → Korean
+## Automatic direction detection
 
-Use:
-
-```yaml
-- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
-  with:
-    from: en
-```
-
-This treats `README.md` as the source and updates `README.ko.md`.
-
-### Korean → English
-
-Use:
-
-```yaml
-- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
-  with:
-    from: ko
-```
-
-This treats `README.ko.md` as the source and updates `README.md`.
-
-### Automatic direction detection
-
-You can also omit `from`:
+You can omit `from`:
 
 ```yaml
 - uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
@@ -290,12 +520,46 @@ For automatic detection, use:
 
 so the Action can compare the latest commit with its parent.
 
+When both README files are modified in the same commit and the source language cannot be determined safely, specify `from` explicitly.
+
+For example:
+
+```yaml
+- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
+  with:
+    from: ko
+```
+
 ## Language navigation
 
-`readme-translate-kr-en` maintains this navigation block at the top of both README files:
+`readme-translate-kr-en` maintains a language navigation block at the top of bilingual README files.
+
+For example:
 
 ```html
 
+```
+
+When custom filenames are used, the navigation links should reflect those filenames.
+
+For example, if Korean is the main README:
+
+```text
+README.md
+README.en.md
+```
+
+the navigation becomes:
+
+```html
+<p align="right">
+  <sub>
+    🌐 Language&nbsp;&nbsp;
+    <a href="./README.en.md">English</a>
+    &nbsp;|&nbsp;
+    <a href="./README.md">한국어</a>
+  </sub>
+</p>
 ```
 
 The navigation block is removed before translation and added back afterward.
@@ -361,6 +625,7 @@ Planned improvements include:
 - Translation model benchmarking
 - GitHub Profile README support
 - Additional local translation engines
+- More flexible bilingual file detection
 
 The long-term goal is to make bilingual README maintenance automatic while keeping translation local, predictable, and free from paid translation APIs.
 

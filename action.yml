@@ -10,6 +10,16 @@ inputs:
     required: false
     default: ""
 
+  source-file:
+    description: Source README file.
+    required: false
+    default: "README.md"
+
+  target-file:
+    description: Target translated README file. Leave empty to auto-generate based on source language.
+    required: false
+    default: ""
+
   python-version:
     description: Python version used by the local translation engine.
     required: false
@@ -17,6 +27,7 @@ inputs:
 
 runs:
   using: composite
+
   steps:
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -57,9 +68,17 @@ runs:
       shell: bash
       env:
         INPUT_FROM: ${{ inputs.from }}
+        SOURCE_FILE: ${{ inputs.source-file }}
+        TARGET_FILE: ${{ inputs.target-file }}
       run: |
+        args=(sync --source "$SOURCE_FILE")
+
         if [ -n "$INPUT_FROM" ]; then
-          node "$GITHUB_ACTION_PATH/src/cli.js" sync --from "$INPUT_FROM"
-        else
-          node "$GITHUB_ACTION_PATH/src/cli.js" sync
+          args+=(--from "$INPUT_FROM")
         fi
+
+        if [ -n "$TARGET_FILE" ]; then
+          args+=(--target "$TARGET_FILE")
+        fi
+
+        node "$GITHUB_ACTION_PATH/src/cli.js" "${args[@]}"
