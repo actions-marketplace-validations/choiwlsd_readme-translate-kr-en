@@ -1,0 +1,39 @@
+name: readme-bilingual
+description: Free, local-first English/Korean README translation with no API key.
+author: readme-bilingual
+inputs:
+  from:
+    description: Source language (en or ko). Leave empty to auto-detect from the latest commit.
+    required: false
+    default: ''
+  python-version:
+    description: Python version used by the local translation engine.
+    required: false
+    default: '3.11'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+        cache-dependency-path: ${{ github.action_path }}/requirements.txt
+    - name: Cache translation models
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/huggingface
+        key: readme-bilingual-${{ runner.os }}-${{ hashFiles(format('{0}/requirements.txt', github.action_path)) }}
+    - name: Install local translation engine
+      shell: bash
+      run: python -m pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
+    - name: Sync README translation
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.from }}" ]; then
+          node "$GITHUB_ACTION_PATH/src/cli.js" sync --from "${{ inputs.from }}"
+        else
+          node "$GITHUB_ACTION_PATH/src/cli.js" sync
+        fi
