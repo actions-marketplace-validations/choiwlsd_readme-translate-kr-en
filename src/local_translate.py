@@ -5,18 +5,20 @@ import re
 import sys
 from pathlib import Path
 
-MODEL_NAME = "facebook/nllb-200-distilled-600M"
 
 LANGUAGES = {
     "en-to-ko": {
+        "model": "NHNDQ/nllb-finetuned-en2ko",
         "source": "eng_Latn",
         "target": "kor_Hang",
     },
     "ko-to-en": {
+        "model": "NHNDQ/nllb-finetuned-ko2en",
         "source": "kor_Hang",
         "target": "eng_Latn",
     },
 }
+
 
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
 HTML_ONLY_RE = re.compile(r"^\s*<[^>]+>\s*$")
@@ -176,21 +178,22 @@ def translate_texts(texts, direction, batch_size=4):
 
     language_config = LANGUAGES[direction]
 
+    model_name = language_config["model"]
     source_lang = language_config["source"]
     target_lang = language_config["target"]
 
     print(
-        f"Loading translation model: {MODEL_NAME}",
+        f"Loading translation model: {model_name}",
         file=sys.stderr,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(
-        MODEL_NAME,
+        model_name,
         src_lang=source_lang,
     )
 
     model = AutoModelForSeq2SeqLM.from_pretrained(
-        MODEL_NAME
+        model_name
     )
 
     model.eval()
@@ -365,7 +368,7 @@ def main():
 
     print(
         (
-            f"Translated with {MODEL_NAME} "
+            f"Translated with {language_config['model']} "
             f"({language_config['source']} "
             f"-> {language_config['target']})"
         ),
