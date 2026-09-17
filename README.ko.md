@@ -1,9 +1,3 @@
-<!-- readme-bilingual:start -->
-<p align="right">
-  <a href="./README.md">English</a> · <a href="./README.ko.md">한국어</a>
-</p>
-<!-- readme-bilingual:end -->
-
 <!-- readme-translate-kr-en:start -->
 <p align="right">
   <a href="./README.md">영어</a> · <a href="./README.ko.md">한국어</a>

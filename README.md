@@ -1,9 +1,3 @@
-<!-- readme-bilingual:start -->
-<p align="right">
-  <a href="./README.md">English</a> · <a href="./README.ko.md">한국어</a>
-</p>
-<!-- readme-bilingual:end -->
-
 <!-- readme-translate-kr-en:start -->
 <p align="right">
   <a href="./README.md">English</a> · <a href="./README.ko.md">한국어</a>
@@ -296,6 +290,7 @@ so the Action can compare the latest commit with its parent.
 `readme-translate-kr-en` maintains this navigation block at the top of both README files:
 
 ```html
+
 ```
 
 The navigation block is removed before translation and added back afterward.
