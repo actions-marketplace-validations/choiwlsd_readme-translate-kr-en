@@ -4,14 +4,17 @@ import path from "node:path";
 export const NAV_START = "<!-- readme-translate-kr-en:start -->";
 export const NAV_END = "<!-- readme-translate-kr-en:end -->";
 
-export function languageNav() {
+export function languageNav(currentFile, englishFile, koreanFile) {
+  const englishLink = relativeLink(currentFile, englishFile);
+  const koreanLink = relativeLink(currentFile, koreanFile);
+
   return `${NAV_START}
 <p align="right">
   <sub>
     🌐 Language&nbsp;&nbsp;
-    <a href="./README.md">English</a>
+    <a href="${englishLink}">English</a>
     &nbsp;|&nbsp;
-    <a href="./README.ko.md">한국어</a>
+    <a href="${koreanLink}">한국어</a>
   </sub>
 </p>
 ${NAV_END}`;
@@ -26,8 +29,17 @@ export function stripLanguageNav(markdown) {
   return markdown.replace(pattern, "").replace(/^\s+/, "");
 }
 
-export function withLanguageNav(markdown) {
-  return `${languageNav()}\n\n${stripLanguageNav(markdown).trimStart()}`;
+export function withLanguageNav(
+  markdown,
+  currentFile,
+  englishFile,
+  koreanFile,
+) {
+  return `${languageNav(
+    currentFile,
+    englishFile,
+    koreanFile,
+  )}\n\n${stripLanguageNav(markdown).trimStart()}`;
 }
 
 export function detectDirection(changedFiles = []) {
@@ -46,11 +58,24 @@ export async function readUtf8(file) {
 
 export async function writeUtf8(file, contents) {
   await fs.mkdir(path.dirname(file), { recursive: true });
+
   await fs.writeFile(
     file,
     contents.endsWith("\n") ? contents : `${contents}\n`,
     "utf8",
   );
+}
+
+function relativeLink(fromFile, toFile) {
+  const fromDir = path.dirname(fromFile);
+
+  let relative = path.relative(fromDir, toFile).replace(/\\/g, "/");
+
+  if (!relative.startsWith(".")) {
+    relative = `./${relative}`;
+  }
+
+  return relative;
 }
 
 function escapeRegExp(value) {
