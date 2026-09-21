@@ -336,7 +336,7 @@ The Action supports the following inputs:
 | Input            | Description                                   | Default                  |
 | ---------------- | --------------------------------------------- | ------------------------ |
 | `from`           | Source language: `en` or `ko`                 | Auto-detect              |
-| `source-file`    | README file used as the translation source    | `README.md`              |
+| `source-file`    | README file used as the translation source    | Auto-detect or `README.md` |
 | `target-file`    | Translated README path                        | Automatically determined |
 | `python-version` | Python version used by the translation engine | `3.11`                   |
 
@@ -508,7 +508,9 @@ You can omit `from`:
 - uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
 ```
 
-The CLI then checks the latest Git commit and attempts to determine which README changed.
+When both `from` and `source-file` are omitted, the CLI compares the latest commit with its parent. If exactly one standard README (`README.md`, `README.ko.md`, or `README.en.md`) changed, it uses that file as the source and detects its language from the content. The translated counterpart is then updated.
+
+If Git history is unavailable, or no standard README changed, the CLI falls back to `README.md` and content-based language detection.
 
 For automatic detection, use:
 
@@ -520,7 +522,7 @@ For automatic detection, use:
 
 so the Action can compare the latest commit with its parent.
 
-When both README files are modified in the same commit and the source language cannot be determined safely, specify `from` explicitly.
+When multiple standard README files are modified in the same commit, the CLI stops rather than guessing. Specify both `from` and `source-file` explicitly.
 
 For example:
 

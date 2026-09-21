@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { detectDirection, stripLanguageNav, withLanguageNav } from '../src/core.js';
+import {
+  detectDirection,
+  getAutomaticSourcePath,
+  getAutomaticTargetPath,
+  stripLanguageNav,
+  withLanguageNav,
+} from '../src/core.js';
 
 test('adds language navigation exactly once', () => {
   const once = withLanguageNav('# Hello\n');
@@ -17,4 +23,23 @@ test('detects changed source README', () => {
   assert.equal(detectDirection(['README.ko.md']), 'ko-to-en');
   assert.equal(detectDirection(['README.md']), 'en-to-ko');
   assert.equal(detectDirection(['README.md', 'README.ko.md']), 'en-to-ko');
+});
+
+test('uses the opposite standard README as an automatic target', () => {
+  assert.equal(getAutomaticTargetPath('README.md', 'en'), 'README.ko.md');
+  assert.equal(getAutomaticTargetPath('README.ko.md', 'ko'), 'README.md');
+  assert.equal(getAutomaticTargetPath('README.en.md', 'en'), 'README.md');
+});
+
+test('selects one changed standard README as the automatic source', () => {
+  assert.equal(getAutomaticSourcePath(['README.ko.md']), 'README.ko.md');
+  assert.equal(
+    getAutomaticSourcePath(['docs/README.en.md']),
+    'docs/README.en.md',
+  );
+  assert.equal(getAutomaticSourcePath(['src/core.js']), 'README.md');
+  assert.throws(
+    () => getAutomaticSourcePath(['README.md', 'README.ko.md']),
+    /Multiple README files changed/,
+  );
 });

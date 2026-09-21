@@ -81,3 +81,38 @@ function relativeLink(fromFile, toFile) {
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+export function getAutomaticTargetPath(sourcePath, from) {
+  const suffix = from === "en" ? ".ko" : ".en";
+  const oppositeSuffix = from === "en" ? ".en" : ".ko";
+  const parsed = path.parse(sourcePath);
+
+  if (parsed.ext.toLowerCase() !== ".md") {
+    return `${sourcePath}${suffix}`;
+  }
+
+  if (parsed.name.endsWith(oppositeSuffix)) {
+    return path.join(
+      parsed.dir,
+      `${parsed.name.slice(0, -oppositeSuffix.length)}${parsed.ext}`,
+    );
+  }
+
+  return path.join(parsed.dir, `${parsed.name}${suffix}${parsed.ext}`);
+}
+
+export function getAutomaticSourcePath(changedFiles = []) {
+  const changedReadmes = changedFiles.filter((file) =>
+    /(^|\/)README(?:\.(?:en|ko))?\.md$/i.test(file),
+  );
+
+  if (changedReadmes.length === 0) return "README.md";
+
+  if (changedReadmes.length > 1) {
+    throw new Error(
+      "Multiple README files changed in the latest commit. Use --from and --source explicitly.",
+    );
+  }
+
+  return changedReadmes[0];
+}

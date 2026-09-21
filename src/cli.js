@@ -1,10 +1,13 @@
 import {
+  getAutomaticSourcePath,
+  getAutomaticTargetPath,
   readUtf8,
   stripLanguageNav,
   withLanguageNav,
   writeUtf8,
 } from './core.js';
 
+import { execFileSync } from 'node:child_process';
 import { translateMarkdownLocal } from './local.js';
 
 const args = process.argv.slice(2);
@@ -95,13 +98,12 @@ async function init(flags) {
 }
 
 async function sync(flags) {
-  const source = flags.source ?? 'README.md';
+  const source = resolveSourcePath(flags);
 
   const sourceMarkdown =
     stripLanguageNav(await readUtf8(source));
 
-  const from =
-    flags.from ?? detectContentLanguage(sourceMarkdown);
+  const from = flags.from ?? detectContentLanguage(sourceMarkdown);
 
   validateLanguage(from);
 
@@ -168,6 +170,28 @@ async function sync(flags) {
   console.log(`Updated ${target}.`);
 }
 
+function resolveSourcePath(flags) {
+  if (flags.source || flags.from) {
+    return flags.source ?? 'README.md';
+  }
+
+  return getAutomaticSourcePath(latestChangedFiles());
+}
+
+function latestChangedFiles() {
+  try {
+    return execFileSync(
+      'git',
+      ['diff', '--name-only', 'HEAD^', 'HEAD'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    )
+      .split(/\r?\n/)
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 function detectContentLanguage(markdown) {
   const text = stripNonLanguageContent(markdown);
 
@@ -197,39 +221,6 @@ function stripNonLanguageContent(markdown) {
     .replace(/<[^>]+>/g, ' ')
     .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-}
-
-function getAutomaticTargetPath(sourcePath, from) {
-  const suffix =
-    from === 'en'
-      ? '.ko'
-      : '.en';
-
-  const lastSlash = Math.max(
-    sourcePath.lastIndexOf('/'),
-    sourcePath.lastIndexOf('\\'),
-  );
-
-  const directory =
-    lastSlash >= 0
-      ? sourcePath.slice(0, lastSlash + 1)
-      : '';
-
-  const fileName =
-    lastSlash >= 0
-      ? sourcePath.slice(lastSlash + 1)
-      : sourcePath;
-
-  const lastDot = fileName.lastIndexOf('.');
-
-  if (lastDot <= 0) {
-    return `${directory}${fileName}${suffix}`;
-  }
-
-  const base = fileName.slice(0, lastDot);
-  const extension = fileName.slice(lastDot);
-
-  return `${directory}${base}${suffix}${extension}`;
 }
 
 function validateLanguage(from) {
@@ -274,7 +265,9 @@ Usage:
 
 Options:
   --from en|ko       Force source language.
-  --source <file>    Source Markdown file. Default: README.md
+  --source <file>    Source Markdown file. Default: README.md.
+                     When --source and --from are omitted, use one
+                     standard README changed in the latest commit.
   --target <file>    Target Markdown file.
                      If omitted, generated automatically:
                        en -> *.ko.md
