@@ -7,7 +7,7 @@
     "readme-translate-kr-en": "./src/cli.js"
   },
   "scripts": {
-    "test": "node --test && python3 -m unittest discover -s test -p '*_test.py'",
+    "test": "node --test test/core.test.js && node ./test/run-python-tests.js",
     "translate": "node ./src/cli.js sync"
   },
   "engines": {

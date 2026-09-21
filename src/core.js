@@ -31,9 +31,9 @@ export function stripLanguageNav(markdown) {
 
 export function withLanguageNav(
   markdown,
-  currentFile,
-  englishFile,
-  koreanFile,
+  currentFile = "README.md",
+  englishFile = "README.md",
+  koreanFile = "README.ko.md",
 ) {
   return `${languageNav(
     currentFile,
