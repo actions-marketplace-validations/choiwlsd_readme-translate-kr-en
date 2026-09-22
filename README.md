@@ -1,3 +1,14 @@
+<!-- readme-translate-kr-en:start -->
+<p align="right">
+  <sub>
+    🌐 Language&nbsp;&nbsp;
+    <a href="./README.md">English</a>
+    &nbsp;|&nbsp;
+    <a href="./README.ko.md">한국어</a>
+  </sub>
+</p>
+<!-- readme-translate-kr-en:end -->
+
 # readme-translate-kr-en
 
 Free, local-first English ↔ Korean README translation and synchronization for GitHub.
