@@ -4,6 +4,10 @@ description: Free, local-first English/Korean README translation with no API key
 
 author: readme-translate-kr-en
 
+branding:
+  icon: book-open
+  color: blue
+
 inputs:
   from:
     description: Source language (en or ko). Leave empty to infer it from a single changed standard README in the latest commit.
@@ -52,17 +56,6 @@ runs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
-
-    - name: Install Node.js dependencies
-      shell: bash
-      run: |
-        cd "$GITHUB_ACTION_PATH"
-
-        if [ -f package-lock.json ]; then
-          npm ci --omit=dev
-        elif [ -f package.json ]; then
-          npm install --omit=dev
-        fi
 
     - name: Sync README translation
       shell: bash

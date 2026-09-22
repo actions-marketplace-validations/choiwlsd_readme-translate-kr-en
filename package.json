@@ -2,6 +2,14 @@
   "name": "readme-translate-kr-en",
   "version": "0.2.0",
   "description": "Free local-first English/Korean README translation CLI and GitHub Action. No API key required.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/choiwlsd/readme-translate-kr-en.git"
+  },
+  "homepage": "https://github.com/choiwlsd/readme-translate-kr-en#readme",
+  "bugs": {
+    "url": "https://github.com/choiwlsd/readme-translate-kr-en/issues"
+  },
   "type": "module",
   "bin": {
     "readme-translate-kr-en": "./src/cli.js"
@@ -13,6 +21,13 @@
   "engines": {
     "node": ">=20"
   },
+  "files": [
+    "src/",
+    "!src/**/__pycache__/**",
+    "!src/**/*.pyc",
+    "action.yml",
+    "requirements.txt"
+  ],
   "keywords": [
     "readme",
     "translation",
