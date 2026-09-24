@@ -52,6 +52,38 @@ export function detectDirection(changedFiles = []) {
   return "en-to-ko";
 }
 
+export function detectContentLanguage(markdown) {
+  const text = stripNonLanguageContent(markdown);
+
+  const koreanChars =
+    (text.match(/[가-힣]/g) ?? []).length;
+
+  const englishChars =
+    (text.match(/[A-Za-z]/g) ?? []).length;
+
+  if (koreanChars === 0 && englishChars === 0) {
+    throw new Error(
+      "Could not detect README language. Use --from en or --from ko.",
+    );
+  }
+
+  return koreanChars > englishChars
+    ? "ko"
+    : "en";
+}
+
+export function stripNonLanguageContent(markdown) {
+  return markdown
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/~~~[\s\S]*?~~~/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+}
+
 export async function readUtf8(file) {
   return fs.readFile(file, "utf8");
 }

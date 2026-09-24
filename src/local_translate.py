@@ -90,12 +90,25 @@ def split_markdown(markdown):
     segments = []
     in_fence = False
     in_frontmatter = False
+    in_html_comment = False
 
     for line_number, line in enumerate(
         markdown.splitlines(keepends=True)
     ):
         raw = line.rstrip("\r\n")
         newline = line[len(raw):]
+
+        # Preserve complete HTML comments, including multiline examples.
+        if in_html_comment or "<!--" in raw:
+            segments.append((False, raw, newline, ""))
+
+            if "<!--" in raw and "-->" not in raw:
+                in_html_comment = True
+
+            if in_html_comment and "-->" in raw:
+                in_html_comment = False
+
+            continue
 
         # Preserve YAML front matter at the start of a document.
         if line_number == 0 and raw.strip() == "---":

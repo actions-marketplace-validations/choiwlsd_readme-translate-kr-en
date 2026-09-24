@@ -63,6 +63,26 @@ class LocalTranslateTest(unittest.TestCase):
         self.assertTrue(out.startswith("---\ntitle: Project\ntags: [docs, readme]\n---\n"))
         self.assertIn("# KO:Hello", out)
 
+    def test_preserves_complete_html_comments(self):
+        src = (
+            "<!-- Example text must not be translated.\n"
+            '<a href="https://example.com">Icon example</a>\n'
+            "-->\n"
+            "# Hello\n"
+        )
+        out = mod.translate_markdown(
+            src,
+            "en-to-ko",
+            translator=fake_translate,
+        )
+
+        self.assertIn("Example text must not be translated.", out)
+        self.assertIn(
+            '<a href="https://example.com">Icon example</a>',
+            out,
+        )
+        self.assertIn("# KO:Hello", out)
+
     def test_fails_instead_of_dropping_protected_content(self):
         def destructive_translator(texts, direction):
             return ["translated without protected content" for _ in texts]

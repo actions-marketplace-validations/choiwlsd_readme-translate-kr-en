@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  detectContentLanguage,
   detectDirection,
   getAutomaticSourcePath,
   getAutomaticTargetPath,
@@ -23,6 +24,18 @@ test('detects changed source README', () => {
   assert.equal(detectDirection(['README.ko.md']), 'ko-to-en');
   assert.equal(detectDirection(['README.md']), 'en-to-ko');
   assert.equal(detectDirection(['README.md', 'README.ko.md']), 'en-to-ko');
+});
+
+test('detects content language without counting HTML comments', () => {
+  const markdown = `<!--
+  This English example is intentionally long and must be ignored.
+  Another English sentence inside the comment must also be ignored.
+  -->
+  ## 소개
+  안녕하세요. 한국어로 작성한 프로젝트입니다.
+  `;
+
+  assert.equal(detectContentLanguage(markdown), 'ko');
 });
 
 test('uses the opposite standard README as an automatic target', () => {

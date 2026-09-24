@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Translate README
         uses: choiwlsd/readme-translate-kr-en@v0.2.1
@@ -137,7 +137,7 @@ jobs:
 자동 검출에 의존할 때 `fetch-depth: 2`을 사용하세요.
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v7
   with:
     fetch-depth: 2
 ```
