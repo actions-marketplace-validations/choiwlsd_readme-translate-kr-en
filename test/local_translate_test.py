@@ -40,7 +40,7 @@ class LocalTranslateTest(unittest.TestCase):
 
         self.assertIn("🚀", out)
         self.assertIn("✅", out)
-        self.assertIn("**status**", out)
+        self.assertIn("**KO:status**", out)
         self.assertIn("[Docs](https://example.com/a_(b))", out)
         self.assertIn("[API][api]", out)
         self.assertIn(
@@ -83,19 +83,59 @@ class LocalTranslateTest(unittest.TestCase):
         )
         self.assertIn("# KO:Hello", out)
 
-    def test_fails_instead_of_dropping_protected_content(self):
-        def destructive_translator(texts, direction):
-            return ["translated without protected content" for _ in texts]
+    def test_never_sends_protected_content_to_translator(self):
+        received = []
 
-        with self.assertRaisesRegex(
-            RuntimeError,
-            "refusing to write a corrupted README",
-        ):
-            mod.translate_markdown(
-                "Keep [Docs](https://example.com).\n",
-                "en-to-ko",
-                translator=destructive_translator,
-            )
+        def recording_translator(texts, direction):
+            received.extend(texts)
+            return [f"KO:{text}" for text in texts]
+
+        src = (
+            '경희대학교 <a href="https://example.com">디닷컴</a> '
+            '회장 <sub>2025. 01.</sub> 🚀\n'
+        )
+        out = mod.translate_markdown(
+            src,
+            "ko-to-en",
+            translator=recording_translator,
+        )
+
+        model_input = "".join(received)
+        self.assertNotIn("<a", model_input)
+        self.assertNotIn("</a>", model_input)
+        self.assertNotIn("<sub>", model_input)
+        self.assertNotIn("🚀", model_input)
+        self.assertIn('<a href="https://example.com">', out)
+        self.assertIn("</a>", out)
+        self.assertIn("<sub>2025. 01.</sub>", out)
+        self.assertIn("🚀", out)
+
+    def test_preserves_profile_readme_html_structure(self):
+        src = (
+            "### 🏆 Awards\n"
+            '- 경희대학교 <a href="https://thon.khlug.org/" '
+            'target="_blank">khuthon</a> '
+            "<strong>최우수상</strong> <sub>2025. 05.</sub>\n"
+            "### 💌 Contact\n"
+            '<p align="center">\n'
+            '  <a href="mailto:test@example.com">\n'
+            '    <img src="https://example.com/icon.svg" title="Email" />\n'
+            "  </a>\n"
+            "</p>\n"
+        )
+        out = mod.translate_markdown(
+            src,
+            "ko-to-en",
+            translator=fake_translate,
+        )
+
+        self.assertIn('href="https://thon.khlug.org/"', out)
+        self.assertIn('target="_blank"', out)
+        self.assertIn("<strong>", out)
+        self.assertIn("</strong>", out)
+        self.assertIn("<sub>2025. 05.</sub>", out)
+        self.assertIn('href="mailto:test@example.com"', out)
+        self.assertIn('src="https://example.com/icon.svg"', out)
 
 
 if __name__ == "__main__":

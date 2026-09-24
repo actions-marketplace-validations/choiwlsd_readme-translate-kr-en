@@ -53,37 +53,41 @@ PREFIX_RE = re.compile(
 )
 
 
-def protect_inline(text):
-    protected = []
+def split_inline(text):
+    """Split text from markup that must never reach the model."""
+    pieces = []
+    cursor = 0
 
-    def replace(match):
-        token = (
-            "https://readme-translate.invalid/"
-            f"protected/{len(protected)}"
+    for match in INLINE_TOKEN_RE.finditer(text):
+        if match.start() > cursor:
+            append_text_piece(pieces, text[cursor:match.start()])
+
+        pieces.append((False, match.group(0)))
+        cursor = match.end()
+
+    if cursor < len(text):
+        append_text_piece(pieces, text[cursor:])
+
+    return pieces
+
+
+def append_text_piece(pieces, value):
+    # Punctuation, spacing, and dates do not need translation.
+    should_translate = bool(re.search(r"[A-Za-z가-힣]", value))
+    pieces.append((should_translate, value))
+
+
+def rebuild_inline(pieces, translated_iter):
+    output = []
+
+    for should_translate, value in pieces:
+        output.append(
+            next(translated_iter)
+            if should_translate
+            else value
         )
-        protected.append(match.group(0))
-        return token
 
-    return INLINE_TOKEN_RE.sub(replace, text), protected
-
-
-def restore_inline(text, protected):
-    for index, value in enumerate(protected):
-        token = (
-            "https://readme-translate.invalid/"
-            f"protected/{index}"
-        )
-
-        if token not in text:
-            raise RuntimeError(
-                "The translation model removed protected Markdown "
-                f"content token {index}; refusing to write a "
-                "corrupted README."
-            )
-
-        text = text.replace(token, value)
-
-    return text
+    return "".join(output)
 
 
 def split_markdown(markdown):
@@ -158,17 +162,16 @@ def split_markdown(markdown):
                 trailing = part[len(part.rstrip()):]
                 core = part.strip()
 
-                protected_text, protected = protect_inline(core)
+                pieces = split_inline(core)
 
                 translated_parts.append(
                     (
                         True,
-                        protected_text,
+                        pieces,
                         "",
                         (
                             leading,
                             trailing,
-                            protected,
                         ),
                     )
                 )
@@ -196,17 +199,16 @@ def split_markdown(markdown):
         trailing = body[len(body.rstrip()):]
         core = body.strip()
 
-        protected_text, protected = protect_inline(core)
+        pieces = split_inline(core)
 
         segments.append(
             (
                 True,
-                protected_text,
+                pieces,
                 newline,
                 (
                     prefix + leading,
                     trailing,
-                    protected,
                 ),
             )
         )
@@ -303,12 +305,20 @@ def translate_markdown(
 
     for kind, value, _, _ in segments:
         if kind is True:
-            texts.append(value)
+            texts.extend(
+                piece
+                for should_translate, piece in value
+                if should_translate
+            )
 
         elif kind == "table":
             for part_kind, part_value, _, _ in value:
                 if part_kind:
-                    texts.append(part_value)
+                    texts.extend(
+                        piece
+                        for should_translate, piece in part_value
+                        if should_translate
+                    )
 
     translated_iter = iter(
         translator(
@@ -326,12 +336,8 @@ def translate_markdown(
             )
 
         elif kind is True:
-            prefix, trailing, protected = meta
-
-            translated = restore_inline(
-                next(translated_iter),
-                protected,
-            )
+            prefix, trailing = meta
+            translated = rebuild_inline(value, translated_iter)
 
             output.append(
                 prefix
@@ -354,11 +360,10 @@ def translate_markdown(
                     rebuilt.append(part_value)
                     continue
 
-                leading, trailing, protected = part_meta
-
-                translated = restore_inline(
-                    next(translated_iter),
-                    protected,
+                leading, trailing = part_meta
+                translated = rebuild_inline(
+                    part_value,
+                    translated_iter,
                 )
 
                 rebuilt.append(
