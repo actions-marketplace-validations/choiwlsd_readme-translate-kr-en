@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import difflib
 import re
 import sys
 from pathlib import Path
@@ -408,6 +409,147 @@ def translate_markdown(
     return "".join(output)
 
 
+def translate_markdown_incremental(
+    markdown,
+    current_target,
+    previous_source,
+    previous_generated,
+    direction,
+    translator=translate_texts,
+):
+    """Translate changed Markdown elements and preserve current translations."""
+    source_lines = markdown.splitlines(keepends=True)
+    previous_source_lines = previous_source.splitlines(keepends=True)
+    previous_generated_lines = previous_generated.splitlines(keepends=True)
+    current_target_lines = current_target.splitlines(keepends=True)
+    segments = split_markdown(markdown)
+
+    if (
+        len(segments) != len(source_lines)
+        or len(previous_source_lines) != len(previous_generated_lines)
+    ):
+        translated = translate_markdown(markdown, direction, translator)
+        return translated, translated
+
+    source_map = unchanged_line_map(
+        previous_source_lines,
+        source_lines,
+    )
+    current_chunks = map_edited_target(
+        previous_generated_lines,
+        current_target_lines,
+    )
+
+    texts = []
+
+    for index, (kind, value, _, _) in enumerate(segments):
+        if index in source_map or kind is not True:
+            continue
+
+        texts.extend(
+            piece
+            for should_translate, piece in value
+            if should_translate
+        )
+
+    translated_iter = iter(
+        translator(texts, direction) if texts else []
+    )
+    output = []
+    generated = []
+
+    for index, (kind, value, newline, meta) in enumerate(segments):
+        previous_index = source_map.get(index)
+
+        if previous_index is not None:
+            output.append(current_chunks[previous_index])
+            generated.append(previous_generated_lines[previous_index])
+            continue
+
+        if kind is False:
+            translated_line = value + newline
+        else:
+            prefix, trailing = meta
+            translated_line = (
+                prefix
+                + rebuild_inline(value, translated_iter)
+                + trailing
+                + newline
+            )
+
+        output.append(translated_line)
+        generated.append(translated_line)
+
+    return "".join(output), "".join(generated)
+
+
+def unchanged_line_map(previous_lines, current_lines):
+    """Map current line indexes to identical lines in the previous source."""
+    matcher = difflib.SequenceMatcher(
+        None,
+        previous_lines,
+        current_lines,
+        autojunk=False,
+    )
+    mapping = {}
+
+    for tag, old_start, old_end, new_start, new_end in matcher.get_opcodes():
+        if tag != "equal":
+            continue
+
+        for offset in range(new_end - new_start):
+            mapping[new_start + offset] = old_start + offset
+
+    return mapping
+
+
+def map_edited_target(previous_generated_lines, current_target_lines):
+    """Attach current target edits to their previous generated elements."""
+    chunks = [None] * len(previous_generated_lines)
+    matcher = difflib.SequenceMatcher(
+        None,
+        previous_generated_lines,
+        current_target_lines,
+        autojunk=False,
+    )
+
+    for tag, old_start, old_end, new_start, new_end in matcher.get_opcodes():
+        old_count = old_end - old_start
+        new_count = new_end - new_start
+
+        if tag == "equal":
+            for offset in range(old_count):
+                chunks[old_start + offset] = current_target_lines[new_start + offset]
+            continue
+
+        if tag == "replace" and old_count == new_count:
+            for offset in range(old_count):
+                chunks[old_start + offset] = current_target_lines[new_start + offset]
+            continue
+
+        if tag in {"replace", "delete"} and old_count:
+            chunks[old_start] = "".join(current_target_lines[new_start:new_end])
+
+            for index in range(old_start + 1, old_end):
+                chunks[index] = ""
+
+            continue
+
+        if tag == "insert" and new_count:
+            inserted = "".join(current_target_lines[new_start:new_end])
+
+            if old_start > 0:
+                anchor = old_start - 1
+                chunks[anchor] = (chunks[anchor] or previous_generated_lines[anchor]) + inserted
+            elif chunks:
+                chunks[0] = inserted + (chunks[0] or previous_generated_lines[0])
+
+    return [
+        previous_generated_lines[index] if chunk is None else chunk
+        for index, chunk in enumerate(chunks)
+    ]
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Translate README Markdown locally."
@@ -429,6 +571,11 @@ def main():
         required=True,
     )
 
+    parser.add_argument("--current-target")
+    parser.add_argument("--previous-source")
+    parser.add_argument("--previous-generated")
+    parser.add_argument("--generated-output")
+
     args = parser.parse_args()
 
     source = Path(
@@ -437,10 +584,37 @@ def main():
         encoding="utf-8"
     )
 
-    translated = translate_markdown(
-        source,
-        args.direction,
-    )
+    incremental_paths = [
+        args.current_target,
+        args.previous_source,
+        args.previous_generated,
+        args.generated_output,
+    ]
+
+    if any(incremental_paths) and not all(incremental_paths):
+        parser.error(
+            "incremental translation requires --current-target, "
+            "--previous-source, --previous-generated, and "
+            "--generated-output"
+        )
+
+    if all(incremental_paths):
+        current_target = Path(args.current_target).read_text(encoding="utf-8")
+        previous_source = Path(args.previous_source).read_text(encoding="utf-8")
+        previous_generated = Path(args.previous_generated).read_text(encoding="utf-8")
+        translated, generated = translate_markdown_incremental(
+            source,
+            current_target,
+            previous_source,
+            previous_generated,
+            args.direction,
+        )
+        Path(args.generated_output).write_text(generated, encoding="utf-8")
+    else:
+        translated = translate_markdown(
+            source,
+            args.direction,
+        )
 
     Path(
         args.output

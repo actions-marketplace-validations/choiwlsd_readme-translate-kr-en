@@ -13,6 +13,106 @@ def fake_translate(texts, direction):
 
 
 class LocalTranslateTest(unittest.TestCase):
+    def test_incremental_translation_preserves_manual_edits(self):
+        previous_source = (
+            "- 첫 번째 항목\n"
+            "- 두 번째 항목\n"
+            "- 세 번째 항목\n"
+        )
+        previous_generated = (
+            "- First generated\n"
+            "- Second generated\n"
+            "- Third generated\n"
+        )
+        current_target = (
+            "- First manually corrected\n"
+            "- Second generated\n"
+            "- Third manually corrected\n"
+        )
+        current_source = (
+            "- 첫 번째 항목\n"
+            "- 변경된 두 번째 항목\n"
+            "- 세 번째 항목\n"
+        )
+
+        translated, generated = mod.translate_markdown_incremental(
+            current_source,
+            current_target,
+            previous_source,
+            previous_generated,
+            "ko-to-en",
+            translator=fake_translate,
+        )
+
+        self.assertEqual(
+            translated,
+            "- First manually corrected\n"
+            "- KO:변경된 두 번째 항목\n"
+            "- Third manually corrected\n",
+        )
+        self.assertEqual(
+            generated,
+            "- First generated\n"
+            "- KO:변경된 두 번째 항목\n"
+            "- Third generated\n",
+        )
+
+    def test_incremental_translation_discards_edit_for_changed_source(self):
+        translated, _ = mod.translate_markdown_incremental(
+            "- 변경된 원문\n",
+            "- Manually corrected translation\n",
+            "- 기존 원문\n",
+            "- Old generated translation\n",
+            "ko-to-en",
+            translator=fake_translate,
+        )
+
+        self.assertEqual(translated, "- KO:변경된 원문\n")
+
+    def test_incremental_translation_translates_only_added_bullet(self):
+        received = []
+
+        def recording_translator(texts, direction):
+            received.extend(texts)
+            return [f"KO:{text}" for text in texts]
+
+        translated, _ = mod.translate_markdown_incremental(
+            "- 기존 항목\n- 새로운 항목\n",
+            "- Existing corrected item\n",
+            "- 기존 항목\n",
+            "- Existing generated item\n",
+            "ko-to-en",
+            translator=recording_translator,
+        )
+
+        self.assertEqual(received, ["새로운 항목"])
+        self.assertEqual(
+            translated,
+            "- Existing corrected item\n- KO:새로운 항목\n",
+        )
+
+    def test_incremental_translation_skips_model_when_source_is_unchanged(self):
+        def unexpected_translator(texts, direction):
+            self.fail(f"translator should not receive unchanged text: {texts}")
+
+        translated, generated = mod.translate_markdown_incremental(
+            "## 소개\n\n- 기존 항목\n",
+            "## About me\n\n- Manually improved item\n",
+            "## 소개\n\n- 기존 항목\n",
+            "## Introduction\n\n- Existing generated item\n",
+            "ko-to-en",
+            translator=unexpected_translator,
+        )
+
+        self.assertEqual(
+            translated,
+            "## About me\n\n- Manually improved item\n",
+        )
+        self.assertEqual(
+            generated,
+            "## Introduction\n\n- Existing generated item\n",
+        )
+
     def test_preserves_code_fences_and_links(self):
         src = "# Hello\n\nVisit [Docs](https://example.com).\n\n```js\nconsole.log('Hello')\n```\n"
         out = mod.translate_markdown(src, "en-to-ko", translator=fake_translate)

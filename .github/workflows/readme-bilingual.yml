@@ -5,15 +5,7 @@ on:
     branches: [main]
     paths:
       - README.md
-      - README.ko.md
   workflow_dispatch:
-    inputs:
-      from:
-        description: Source language
-        required: false
-        default: en
-        type: choice
-        options: [en, ko]
 
 permissions:
   contents: write
@@ -34,5 +26,4 @@ jobs:
       - name: Translate README locally
         uses: ./
         with:
-          from: ${{ github.event.inputs.from }}
-          source-file: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.from == 'ko' && 'README.ko.md' || 'README.md') || '' }}
+          source-file: README.md

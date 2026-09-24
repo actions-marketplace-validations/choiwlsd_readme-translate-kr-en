@@ -85,6 +85,8 @@ The first run downloads the translation model. Later runs reuse the Hugging Face
 - Automatic translated README filename selection
 - Custom source and target paths
 - Automatic translation direction detection from the latest commit
+- Incremental translation of only changed Markdown elements
+- Preserves manual translation corrections while their source element is unchanged
 - Safe automatic commit, fetch, rebase, and push
 - Stale translation detection when a README changes during a run
 - Preserves fenced code, inline code, inline and reference links, images, badges, HTML, emphasis, YAML front matter, and emoji
@@ -110,10 +112,10 @@ The default target is `README.ko.md`.
 - uses: choiwlsd/readme-translate-kr-en@v0.2.5
   with:
     from: ko
-    source-file: README.ko.md
+    source-file: README.md
 ```
 
-The default target is `README.md`.
+The default target is `README.en.md`.
 
 ### Custom filenames
 
@@ -153,12 +155,19 @@ If more than one standard README changed in the latest commit, specify `from` an
 | `python-version` | No       | `3.11`                     | Python version used by the translation engine |
 | `push-changes`   | No       | `true`                     | Safely commit and push translated files       |
 | `commit-message` | No       | `docs: sync bilingual README` | Commit message for translated files        |
+| `state-file`     | No       | `.readme-translate-state.json` | Incremental translation state file         |
 
 ## How it works
 
 The Action installs the Python translation dependencies, restores the cached Hugging Face model, protects Markdown elements, translates human-readable text, and writes the translated README back to the checked-out repository.
 
-By default, the Action commits and pushes only the source and translated README files. Before pushing, it fetches the current branch. If unrelated remote commits appeared during translation, it rebases and pushes the translation. If either README changed remotely, it skips the stale result so the newer workflow run can translate the latest content.
+The configured source README is the source of truth. The Action records the last source and machine-generated translation in `.readme-translate-state.json`. On later runs, it translates only Markdown elements whose source changed. Existing target elements are preserved when their source is unchanged, including wording that a user corrected manually. If a source paragraph, list item, heading, or other element changes, its previous target element is discarded and translated again.
+
+Keep the workflow trigger limited to the configured source file. For example, when a Korean `README.md` generates `README.en.md`, use `paths: [README.md]`. Editing only `README.en.md` then does not start a reverse translation.
+
+The state file is committed with the README files. Repositories upgrading from a release without a state file attempt to recover the previous machine translation from the latest `github-actions[bot]` commit.
+
+Before pushing, the Action fetches the current branch. If unrelated remote commits appeared during translation, it rebases and pushes the translation. If either README changed remotely, it skips the stale result so the newer workflow run can translate the latest content.
 
 To manage commits yourself, disable automatic push:
 

@@ -39,6 +39,11 @@ inputs:
     required: false
     default: "docs: sync bilingual README"
 
+  state-file:
+    description: State file used to preserve manually corrected translations for unchanged Markdown elements.
+    required: false
+    default: ".readme-translate-state.json"
+
 outputs:
   source-file:
     description: Source README processed by the Action.
@@ -46,6 +51,9 @@ outputs:
   target-file:
     description: Translated README written by the Action.
     value: ${{ steps.translate.outputs.target-file }}
+  state-file:
+    description: Incremental translation state written by the Action.
+    value: ${{ steps.translate.outputs.state-file }}
 
 runs:
   using: composite
@@ -87,6 +95,7 @@ runs:
         INPUT_FROM: ${{ inputs.from }}
         SOURCE_FILE: ${{ inputs.source-file }}
         TARGET_FILE: ${{ inputs.target-file }}
+        STATE_FILE: ${{ inputs.state-file }}
       run: |
         args=(sync)
 
@@ -102,6 +111,10 @@ runs:
           args+=(--target "$TARGET_FILE")
         fi
 
+        if [ -n "$STATE_FILE" ]; then
+          args+=(--state-file "$STATE_FILE")
+        fi
+
         node "$GITHUB_ACTION_PATH/src/cli.js" "${args[@]}"
 
     - name: Commit and push translation
@@ -111,6 +124,7 @@ runs:
         BASE_SHA: ${{ steps.git-base.outputs.sha }}
         SOURCE_PATH: ${{ steps.translate.outputs.source-file }}
         TARGET_PATH: ${{ steps.translate.outputs.target-file }}
+        STATE_PATH: ${{ steps.translate.outputs.state-file }}
         COMMIT_MESSAGE: ${{ inputs.commit-message }}
       run: |
         if [[ "${GITHUB_REF}" != refs/heads/* ]]; then
@@ -123,4 +137,5 @@ runs:
           --branch "$GITHUB_REF_NAME" \
           --commit-message "$COMMIT_MESSAGE" \
           --file "$SOURCE_PATH" \
-          --file "$TARGET_PATH"
+          --file "$TARGET_PATH" \
+          --file "$STATE_PATH"
