@@ -62,6 +62,19 @@ jobs:
           git push
 ```
 
+### Create the first translation
+
+Adding the workflow file does not immediately run it when `README.md` has not changed. After committing and pushing the workflow file to the default branch:
+
+1. Open the repository's **Actions** tab on GitHub.
+2. Select **Sync Korean README**.
+3. Select **Run workflow**, choose the default branch, and run it.
+4. Wait for the workflow to finish. It will create and commit `README.ko.md` without requiring another edit to `README.md`.
+
+The workflow must exist on the default branch before the **Run workflow** button is available. If the commit step is denied, open **Settings → Actions → General → Workflow permissions** and make sure GitHub Actions is allowed to write repository contents. Organization policy or branch protection can still prevent direct pushes.
+
+After the first translation, every later push that changes `README.md` runs the workflow automatically. You can also use **Run workflow** again whenever you want to regenerate the translation without editing the source README.
+
 The first run downloads the translation model. Later runs reuse the Hugging Face model cache managed by the Action.
 
 > Repositories with branch protection may reject direct pushes from `GITHUB_TOKEN`. Allow GitHub Actions to push to the target branch or adapt the final step to open a pull request.
