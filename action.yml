@@ -1,6 +1,6 @@
 name: readme-translate-kr-en
 
-description: Free, local-first English/Korean README translation with no API key.
+description: Translate, commit, and safely sync English/Korean READMEs with no API key.
 
 author: readme-translate-kr-en
 
@@ -29,10 +29,33 @@ inputs:
     required: false
     default: "3.11"
 
+  push-changes:
+    description: Commit and push translated README files safely.
+    required: false
+    default: "true"
+
+  commit-message:
+    description: Commit message used when push-changes is enabled.
+    required: false
+    default: "docs: sync bilingual README"
+
+outputs:
+  source-file:
+    description: Source README processed by the Action.
+    value: ${{ steps.translate.outputs.source-file }}
+  target-file:
+    description: Translated README written by the Action.
+    value: ${{ steps.translate.outputs.target-file }}
+
 runs:
   using: composite
 
   steps:
+    - name: Record translation base
+      id: git-base
+      shell: bash
+      run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
     - name: Set up Node.js
       uses: actions/setup-node@v7
       with:
@@ -58,6 +81,7 @@ runs:
         python -m pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
 
     - name: Sync README translation
+      id: translate
       shell: bash
       env:
         INPUT_FROM: ${{ inputs.from }}
@@ -79,3 +103,24 @@ runs:
         fi
 
         node "$GITHUB_ACTION_PATH/src/cli.js" "${args[@]}"
+
+    - name: Commit and push translation
+      if: inputs.push-changes == 'true'
+      shell: bash
+      env:
+        BASE_SHA: ${{ steps.git-base.outputs.sha }}
+        SOURCE_PATH: ${{ steps.translate.outputs.source-file }}
+        TARGET_PATH: ${{ steps.translate.outputs.target-file }}
+        COMMIT_MESSAGE: ${{ inputs.commit-message }}
+      run: |
+        if [[ "${GITHUB_REF}" != refs/heads/* ]]; then
+          echo "Automatic push requires a branch ref; current ref is ${GITHUB_REF}." >&2
+          exit 1
+        fi
+
+        node "$GITHUB_ACTION_PATH/src/git-sync.js" \
+          --base-sha "$BASE_SHA" \
+          --branch "$GITHUB_REF_NAME" \
+          --commit-message "$COMMIT_MESSAGE" \
+          --file "$SOURCE_PATH" \
+          --file "$TARGET_PATH"
