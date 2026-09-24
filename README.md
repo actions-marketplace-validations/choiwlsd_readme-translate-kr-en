@@ -11,280 +11,188 @@
 
 # readme-translate-kr-en
 
-Free, local-first English ↔ Korean README translation and synchronization for GitHub.
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-readme--translate--kr--en-blue?logo=github)](https://github.com/marketplace/actions/readme-translate-kr-en)
+[![GitHub release](https://img.shields.io/github/v/release/choiwlsd/readme-translate-kr-en)](https://github.com/choiwlsd/readme-translate-kr-en/releases/latest)
+[![CI](https://github.com/choiwlsd/readme-translate-kr-en/actions/workflows/ci.yml/badge.svg)](https://github.com/choiwlsd/readme-translate-kr-en/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-**No API key. No paid AI API.**
+A free, local-first GitHub Action for translating and synchronizing English and Korean README files.
 
-`readme-translate-kr-en` translates README files locally using open-source machine translation models. It can be used as a CLI or GitHub Action.
+**No npm package or paid translation API is required.** Translation runs on the GitHub Actions runner with open-source machine translation models.
 
-## Features
+## Quick start
 
-- English → Korean and Korean → English translation
-- Automatic translated README filename detection
-- Automatic translation direction detection
-- Custom source and target filenames
-- GitHub-friendly English / 한국어 navigation
-- Preserves code blocks, inline code, URLs, links, badges, and HTML where possible
-- Local translation without a paid API
-- CLI and GitHub Action support
-
-## Requirements
-
-- Node.js 20+
-- Python 3.10+
-
-Translation models are downloaded from Hugging Face on first use and cached locally.
-
-## CLI Usage
-
-### 1. Install
-
-After the package is published to npm, you can run it directly with `npx`:
-
-```bash
-npx readme-translate-kr-en <command>
-```
-
-For local development:
-
-```bash
-python -m venv .venv
-```
-
-Windows PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-Then run the CLI with:
-
-```bash
-node ./src/cli.js <command>
-```
-
-### 2. Initialize bilingual READMEs
-
-```bash
-npx readme-translate-kr-en init
-```
-
-For local development:
-
-```bash
-node ./src/cli.js init
-```
-
-`init` creates or updates the language navigation at the top of the README files.
-
-```text
-English | 한국어
-```
-
-### 3. Translate English → Korean
-
-If `README.md` is written in English:
-
-```bash
-npx readme-translate-kr-en sync --from en --source README.md
-```
-
-This creates or updates:
-
-```text
-README.ko.md
-```
-
-### 4. Translate Korean → English
-
-If `README.md` is written in Korean:
-
-```bash
-npx readme-translate-kr-en sync --from ko --source README.md
-```
-
-This creates or updates:
-
-```text
-README.en.md
-```
-
-### 5. Use custom filenames
-
-Specify both source and target files when necessary:
-
-```bash
-npx readme-translate-kr-en sync \
-  --from ko \
-  --source docs/README.md \
-  --target docs/README.en.md
-```
-
-### 6. Automatic detection
-
-You can also run:
-
-```bash
-npx readme-translate-kr-en sync
-```
-
-When `--from` is omitted, the CLI attempts to determine which README changed from the latest Git commit and detects the translation direction automatically.
-
-If multiple README files changed in the same commit, specify the source explicitly instead of relying on automatic detection:
-
-```bash
-npx readme-translate-kr-en sync --from en --source README.md
-```
-
-## CLI Options
-
-| Option            | Description                                      |
-| ----------------- | ------------------------------------------------ |
-| `init`            | Initialize or update bilingual README navigation |
-| `sync`            | Translate and synchronize a README               |
-| `--from en`       | Translate English → Korean                       |
-| `--from ko`       | Translate Korean → English                       |
-| `--source <file>` | Source README path                               |
-| `--target <file>` | Target README path                               |
-
-When `--target` is omitted, the target filename is automatically determined.
-
-```text
-English source:
-README.md → README.ko.md
-
-Korean source:
-README.md → README.en.md
-```
-
-The translated file is created in the same directory as the source file.
-
-For example:
-
-```text
-docs/README.md → docs/README.ko.md
-```
-
-## Translation
-
-Dedicated NLLB-based models are used for each direction:
-
-| Direction        | Model                        |
-| ---------------- | ---------------------------- |
-| English → Korean | `NHNDQ/nllb-finetuned-en2ko` |
-| Korean → English | `NHNDQ/nllb-finetuned-ko2en` |
-
-Only the model required for the selected translation direction is loaded.
-
-Before translation, Markdown elements such as code blocks, inline code, URLs, links, images, badges, and HTML are protected where possible. Human-readable text is then translated and the Markdown structure is restored.
-
-Translation runs locally. README content is not sent to OpenAI, Anthropic, Gemini, DeepL, or another paid translation API.
-
-> Translation models are distributed separately and have their own licenses and usage terms. Check the corresponding Hugging Face model card before redistribution or commercial use.
-
-## GitHub Action
-
-The project can also be used as a reusable GitHub Action.
-
-English → Korean:
+Create `.github/workflows/translate-readme.yml` in the repository that contains the README you want to translate:
 
 ```yaml
-- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
-  with:
-    from: en
-    source-file: README.md
-```
-
-Korean → English:
-
-```yaml
-- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
-  with:
-    from: ko
-    source-file: README.md
-```
-
-`target-file` is optional and is automatically determined when omitted.
-
-Custom filenames:
-
-```yaml
-- uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
-  with:
-    from: ko
-    source-file: docs/README.md
-    target-file: docs/README.en.md
-```
-
-### Automatic synchronization
-
-Example for an English-first repository:
-
-```yaml
-name: Sync bilingual README
+name: Sync Korean README
 
 on:
   push:
     branches: [main]
     paths:
       - README.md
-      - README.ko.md
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  sync:
+  translate:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
       - name: Translate README
-        uses: YOUR_GITHUB_NAME/readme-translate-kr-en@v0.2.0
+        uses: choiwlsd/readme-translate-kr-en@v0.2.0
         with:
           from: en
           source-file: README.md
 
-      - name: Commit translation
+      - name: Commit translated README
         run: |
           if git diff --quiet -- README.md README.ko.md; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md README.ko.md
-          git commit -m "docs: sync bilingual README"
+          git commit -m "docs: sync Korean README"
           git push
 ```
 
-Replace `YOUR_GITHUB_NAME` with the GitHub username or organization that owns this repository.
+The first run downloads the translation model. Later runs reuse the Hugging Face model cache managed by the Action.
 
-For automatic source detection, use `fetch-depth: 2` so the CLI can compare the latest commit with its parent.
+> Repositories with branch protection may reject direct pushes from `GITHUB_TOKEN`. Allow GitHub Actions to push to the target branch or adapt the final step to open a pull request.
 
-## Tests
+## Features
+
+- English → Korean and Korean → English translation
+- Runs locally on the GitHub Actions runner
+- No API key or paid AI service
+- Automatic translated README filename selection
+- Custom source and target paths
+- Automatic translation direction detection from the latest commit
+- Preserves fenced code, inline code, URLs, links, badges, and HTML where possible
+- Adds English / 한국어 navigation to generated README files
+- Caches downloaded Hugging Face models between runs
+
+## Usage
+
+### English to Korean
+
+```yaml
+- uses: choiwlsd/readme-translate-kr-en@v0.2.0
+  with:
+    from: en
+    source-file: README.md
+```
+
+The default target is `README.ko.md`.
+
+### Korean to English
+
+```yaml
+- uses: choiwlsd/readme-translate-kr-en@v0.2.0
+  with:
+    from: ko
+    source-file: README.ko.md
+```
+
+The default target is `README.md`.
+
+### Custom filenames
+
+```yaml
+- uses: choiwlsd/readme-translate-kr-en@v0.2.0
+  with:
+    from: ko
+    source-file: docs/README.md
+    target-file: docs/README.en.md
+```
+
+### Automatic source detection
+
+Omit `from` and `source-file` to detect a single changed standard README from the latest commit:
+
+```yaml
+- uses: choiwlsd/readme-translate-kr-en@v0.2.0
+```
+
+Use `fetch-depth: 2` when relying on automatic detection:
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 2
+```
+
+If more than one standard README changed in the latest commit, specify `from` and `source-file` explicitly.
+
+## Inputs
+
+| Input | Required | Default | Description |
+| --- | --- | --- | --- |
+| `from` | No | Auto-detect | Source language: `en` or `ko` |
+| `source-file` | No | Auto-detect or `README.md` | Source README path |
+| `target-file` | No | Generated automatically | Translated README path |
+| `python-version` | No | `3.11` | Python version used by the translation engine |
+
+## How it works
+
+The Action installs the Python translation dependencies, restores the cached Hugging Face model, protects Markdown elements, translates human-readable text, and writes the translated README back to the checked-out repository.
+
+The Action modifies files only. Committing and pushing the result remains under the caller workflow's control.
+
+Dedicated NLLB-based models are used for each direction:
+
+| Direction | Model |
+| --- | --- |
+| English → Korean | `NHNDQ/nllb-finetuned-en2ko` |
+| Korean → English | `NHNDQ/nllb-finetuned-ko2en` |
+
+README content is processed on the runner and is not sent to OpenAI, Anthropic, Gemini, DeepL, or another paid translation API.
+
+> Translation models are distributed separately and have their own licenses and usage terms. Review the corresponding Hugging Face model card before redistribution or commercial use.
+
+## Local development
+
+The repository also contains a development CLI, but it is not currently published to npm.
+
+Requirements:
+
+- Node.js 20+
+- Python 3.10+
+
+```bash
+python -m venv .venv
+python -m pip install -r requirements.txt
+node ./src/cli.js sync --from en --source README.md
+```
+
+On Windows, activate the virtual environment with:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Run the test suite with:
 
 ```bash
 npm test
 ```
 
-The test suite does not download or load the translation models.
+The unit tests do not download or load the translation models.
 
-## Roadmap
+## Release
 
-- Incremental README translation
-- Translate only changed Markdown blocks
-- Preserve manually edited translations where possible
-- Improved Markdown parsing and protection
-- Translation model benchmarking
-- GitHub Profile README support
-- Additional local translation engines
+The current Marketplace release is [`v0.2.0`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.0). Pinning the full release tag gives reproducible behavior:
+
+```yaml
+uses: choiwlsd/readme-translate-kr-en@v0.2.0
+```
 
 ## License
 
-`readme-translate-kr-en` is licensed under the MIT License.
-
-Translation models are downloaded separately and are not distributed as part of this project. Each model has its own license and usage terms.
+This project is licensed under the [MIT License](./LICENSE).
