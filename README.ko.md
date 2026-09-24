@@ -9,7 +9,7 @@
 </p>
 <!-- readme-translate-kr-en:end -->
 
-# readme-translate-kr-en
+# 👊readme-translate-kr-en
 
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-readme--translate--kr--en-blue?logo=github)](https://github.com/marketplace/actions/readme-translate-kr-en))
 [![GitHub release](https://img.shields.io/github/v/release/choiwlsd/readme-translate-kr-en)](https://github.com/choiwlsd/readme-translate-kr-en/releases/latest))
@@ -22,7 +22,7 @@
 
 ##  스타트
 
-번역하고자 하는 README를 포함하는 저장소에 `.github/workflows/translate-readme.yml`를 생성한다.
+번역하고자 하는 README를 포함하는 리포지토리에서 `.github/workflows/translate-readme.yml`을 생성한다.
 
 ```yaml
 name: Sync bilingual README
@@ -63,22 +63,22 @@ jobs:
 
 ### 첫 번째 번역을 생성합니다.
 
-워크플로우 파일을 추가하는 것은 `README.md`가 변경되지 않은 경우 즉시 실행되지 않는다. 워크플로우 파일을 커밋하고 디폴트 브랜치로 푸시한 후:
+워크플로우 파일을 추가하는 것은 `README.md`가 변경되지 않은 경우 즉시 실행되지 않습니다. 워크플로우 파일을 디폴트 브랜치로 커밋하고 푸시한 후:
 
-1. GitHub에서 저장소의 **Actions** 탭을 열십시오.
-2. **동기 이중 언어 README**을 선택합니다.
-3. **Run workflow**를 선택하고, 디폴트 브랜치를 선택하여 실행합니다.
-4. 워크플로우가 끝날 때까지 기다립니다. `README.md`에서 우세한 언어를 감지한 다음 영어 소스 콘텐츠에 대한 `README.ko.md` 또는 한국어 소스 콘텐츠에 대한 `README.en.md`를 생성하고 커밋합니다.
+1. GitHub에서 리포지토리의 **Actions** 탭을 엽니다.
+2. **Sync 이중 언어 README**을 선택한다.
+3. **Run workfloww**을 선택하고, 디폴트 브랜치를 선택하여 실행합니다.
+4. 워크플로우가 끝날 때까지 기다립니다. 그것은 `README.md`에서 지배적인 언어를 감지한 다음, 영어 소스 콘텐츠의 경우 `README.ko.md` 또는 한국어 소스 콘텐츠의 경우 `README.en.md`를 생성하고 커밋합니다.
 
-**Run 워크플로우** 버튼이 이용 가능하기 전에 워크플로우가 디폴트 브랜치 상에 존재해야 한다. 커밋 단계가 거부되면, **설정 → 액션 → 일반 → 워크플로우 권한**을 열고 GitHub 액션이 리포지터리 콘텐츠를 기록하는 것이 허용되는지 확인한다. 조직 정책 또는 브랜치 보호는 여전히 직접 푸시를 방지할 수 있다.
+작업 흐름은 **Run workfloww** 버튼이 사용 가능하기 전에 기본 브랜치에 존재해야 합니다. 커밋 단계가 거부되면 **Settings → Actions → General → Workflow permissions**를 열고 GitHub Actions가 저장소 콘텐츠를 작성할 수 있는지 확인하십시오. 조직 정책 또는 브랜치
 
-첫 번째 번역 후 `README.md`를 변경하는 후속 푸시마다 워크플로우가 자동으로 실행됩니다. 또한 소스 README를 편집하지 않고 번역을 재생성할 때마다 **Run 워크플로우**를 다시 사용할 수 있습니다.
+첫 번째 번역 후, `README.md`을 변경하는 후속 푸시마다 워크플로우가 자동으로 실행됩니다. 또한 소스 README를 편집하지 않고 번역을 재생산하고 싶을 때마다 **Run workfloww**를 사용할 수 있습니다.
 
-콘텐츠 기반 언어 검출을 원할 때 `from`를 설정하지 않는다. `from: en` 또는 `from: ko`를 설정하면 의도적으로 검출을 무시하고 언어를 소싱한다. 마크다운 코드 블록, URL, HTML 및 기타 비언어 콘텐츠는 한글 및 영어 문자를 계산하기 전에 가능한 한 배제한다.
+콘텐츠 기반 언어 검출을 원할 때 `from`를 설정하지 마십시오. `from: en` 또는 `from: ko`를 설정하면 의도적으로 검출을 무시하고 소스 언어를 강제합니다. 마크다운 코드 블록, URL, HTML 및 기타 비언어 콘텐츠는 한글 및 영어 문자를 계산하기 전에 최대한 제외됩니다.
 
 첫 번째 실행은 번역 모델을 다운로드합니다. 이후 실행은 액션에서 관리하는 Hugging Face 모델 캐시를 재사용합니다.
 
-> 브랜치 보호를 갖는 리포지토리들은 `GITHUB_TOKEN`로부터의 직접 푸쉬들을 거부할 수 있다. GitHub 액션들이 타겟 브랜치로 푸쉬하도록 허용하거나 풀 요청을 열기 위해 최종 단계를 적응시킨다.
+> 브랜치 보호를 갖는 리포지토리들은 `GITHUB_TOKEN`으로부터의 직접 푸쉬들을 거부할 수 있다. GitHub 액션들이 타겟 브랜치로 푸쉬하도록 허용하거나 풀 요청을 열기 위해 최종 단계를 적응시킨다.
 
 ## 특징
 
@@ -88,7 +88,7 @@ jobs:
 - 자동 번역된 README 파일명 선택
 - 맞춤형 소스 및 타겟 경로
 - 최신 커밋으로부터의 자동 번역 방향 검출
-- 가능한 경우 울타리 코드, 인라인 코드, URL, 링크, 배지 및 HTML을 보존합니다.
+- 울타리 코드, 인라인 코드, 인라인 및 참조 링크, 이미지, 배지, HTML, 강조점, YAML 전면 사항 및 이모지를 보존합니다.
 - 생성된 README 파일에 영어/ 한국어 네비게이션을 추가합니다
 - 실행 사이에 껴안는 얼굴 모델을 다운로드한 캐시
 
@@ -128,13 +128,13 @@ jobs:
 
 ### 자동 소스 검출
 
-`from` 및 `source-file`를 생략하여 최신 커밋에서 단일 변경된 표준 README를 검출한다.
+최신 커밋에서 단일 변경된 표준 README를 검출하려면 `from` 및 `source-file`을 생략한다.
 
 ```yaml
 - uses: choiwlsd/readme-translate-kr-en@v0.2.0
 ```
 
-자동 검출에 의존할 때 `fetch-depth: 2`를 사용한다.
+자동 검출에 의존할 때 `fetch-depth: 2`을 사용하세요.
 
 ```yaml
 - uses: actions/checkout@v4
@@ -142,16 +142,16 @@ jobs:
     fetch-depth: 2
 ```
 
-최신 커밋에서 하나 이상의 표준 README가 변경된 경우 `from` 및 `source-file`를 명시적으로 지정한다.
+최신 커밋에서 하나 이상의 표준 README가 변경된 경우 `from` 및 `source-file`을 명시적으로 지정한다.
 
 ## 입력
 
-| 입력 | 요구 사항 | 디폴트 | 디스크립션 |
-| --- | --- | --- | --- |
-| `from` | 아니야. | 자동 검출 | 소스 언어: `en` 또는 `ko` |
-| `source-file` | 아니야. | 자동 검출 또는 `README.md` | 소스 리드미 경로 |
-| `target-file` | 아니야. | 자동으로 생성 | 번역된 README 경로 |
-| `python-version` | 아니야. | `3.11` | 번역 엔진에 의해 사용되는 파이썬 버전 |
+| 입력            | 요구 사항 | 디폴트                    | 디스크립션                                   |
+| ---------------- | -------- | -------------------------- | --------------------------------------------- |
+| `from`           | 아니야.       | 자동 검출                | 소스 언어: `en` 또는 `ko`                 |
+| `source-file`    | 아니야.       | 자동 검출 또는 `README.md` | 소스 리드미 경로                            |
+| `target-file`    | 아니야.       | 자동으로 생성    | 번역된 README 경로                        |
+| `python-version` | 아니야.       | `3.11`                     | 번역 엔진에 의해 사용되는 파이썬 버전 |
 
 ## 어떻게 작동하는지.
 
@@ -161,8 +161,8 @@ jobs:
 
 각 방향에 대해 전용 NLLB 기반 모델이 사용된다.
 
-| 방향 | 모델 |
-| --- | --- |
+| 방향        | 모델                        |
+| ---------------- | ---------------------------- |
 | 영어 → 한국어 | `NHNDQ/nllb-finetuned-en2ko` |
 | 한국어 → 영어 | `NHNDQ/nllb-finetuned-ko2en` |
 
@@ -201,7 +201,7 @@ npm test
 
 ## 방출
 
-현재 마켓플레이스 릴리스는 [`v0.2.0`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.0)입니다. 전체 릴리스 태그를 고정하면 재현 가능한 동작이 제공됩니다.
+현재 마켓플레이스 릴리스는 [`v0.2.0`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.0). 전체 릴리스 태그를 고정하면 재현 가능한 동작이 제공됩니다.
 
 ```yaml
 uses: choiwlsd/readme-translate-kr-en@v0.2.0
