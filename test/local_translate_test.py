@@ -179,6 +179,77 @@ class LocalTranslateTest(unittest.TestCase):
         self.assertIn("    npm install package", out)
         self.assertNotIn("KO:npm install package", out)
 
+    def test_preserves_task_alert_math_and_double_backtick_code(self):
+        received = []
+
+        def recording_translator(texts, direction):
+            received.extend(texts)
+            return [f"KO:{text}" for text in texts]
+
+        src = (
+            "- [x] Completed task\n"
+            "> [!NOTE]\n"
+            "> Formula $E = mc^2$ uses ``code with ` tick``.\n"
+        )
+        out = mod.translate_markdown(
+            src,
+            "en-to-ko",
+            translator=recording_translator,
+        )
+
+        model_input = "".join(received)
+        self.assertNotIn("[x]", model_input)
+        self.assertNotIn("[!NOTE]", model_input)
+        self.assertNotIn("$E = mc^2$", model_input)
+        self.assertNotIn("``code with ` tick``", model_input)
+        self.assertIn("- [x] ", out)
+        self.assertIn("> [!NOTE]", out)
+        self.assertIn("$E = mc^2$", out)
+        self.assertIn("``code with ` tick``", out)
+
+    def test_does_not_close_backtick_fence_with_tildes(self):
+        src = "```text\n~~~\nstill code\n```\n# Hello\n"
+        out = mod.translate_markdown(
+            src,
+            "en-to-ko",
+            translator=fake_translate,
+        )
+
+        self.assertIn("~~~\nstill code\n```", out)
+        self.assertNotIn("KO:still code", out)
+        self.assertIn("# KO:Hello", out)
+
+    def test_preserves_multiline_html_tag(self):
+        src = (
+            "<img\n"
+            '  src="https://example.com/icon.svg"\n'
+            '  alt="Project icon"\n'
+            ">\n"
+            "# Hello\n"
+        )
+        out = mod.translate_markdown(
+            src,
+            "en-to-ko",
+            translator=fake_translate,
+        )
+
+        self.assertIn('alt="Project icon"', out)
+        self.assertNotIn('alt="KO:Project icon"', out)
+        self.assertIn("# KO:Hello", out)
+
+    def test_chunks_long_text_without_truncation(self):
+        class WordTokenizer:
+            @staticmethod
+            def encode(text, add_special_tokens=False):
+                return text.split()
+
+        text = " ".join(f"word{index}" for index in range(25))
+        chunks = mod.chunk_text(text, WordTokenizer(), max_tokens=10)
+
+        self.assertEqual(3, len(chunks))
+        self.assertEqual(text.split(), " ".join(chunks).split())
+        self.assertTrue(all(len(chunk.split()) <= 10 for chunk in chunks))
+
 
 if __name__ == "__main__":
     unittest.main()

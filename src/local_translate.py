@@ -20,7 +20,7 @@ LANGUAGES = {
 }
 
 
-FENCE_RE = re.compile(r"^\s*(```|~~~)")
+FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})(.*)$")
 INDENTED_CODE_RE = re.compile(r"^(?: {4}|\t)\S")
 HTML_ONLY_RE = re.compile(r"^\s*<[^>]+>\s*$")
 SEPARATOR_RE = re.compile(r"^\s*[:\-| ]+\s*$")
@@ -29,7 +29,9 @@ REFERENCE_DEFINITION_RE = re.compile(
 )
 
 INLINE_TOKEN_RE = re.compile(
-    r"(`[^`\n]+`|"
+    r"((?P<code>`+)[^\n]*?(?P=code)|"
+    r"\$\$[^\n$]+\$\$|(?<!\$)\$[^\n$]+\$(?!\$)|"
+    r"\[[ xX]\]|\[![A-Z][A-Z0-9_-]*\]|"
     r"(?:\\\||(?<!\\)\|)|"
     r"&(?:#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]+);|"
     r"!?\[[^\]\n]*\]\[[^\]\n]*\]|"
@@ -112,15 +114,29 @@ def rebuild_inline(pieces, translated_iter):
 
 def split_markdown(markdown):
     segments = []
-    in_fence = False
+    fence_marker = None
     in_frontmatter = False
     in_html_comment = False
+    in_html_tag = False
 
     for line_number, line in enumerate(
         markdown.splitlines(keepends=True)
     ):
         raw = line.rstrip("\r\n")
         newline = line[len(raw):]
+
+        if in_html_tag:
+            segments.append((False, raw, newline, ""))
+
+            if ">" in raw:
+                in_html_tag = False
+
+            continue
+
+        if re.match(r"^\s*<[A-Za-z][^>]*$", raw):
+            in_html_tag = True
+            segments.append((False, raw, newline, ""))
+            continue
 
         # Preserve complete HTML comments, including multiline examples.
         if in_html_comment or "<!--" in raw:
@@ -148,17 +164,34 @@ def split_markdown(markdown):
 
             continue
 
-        # Fenced code blocks
-        if FENCE_RE.match(raw):
-            in_fence = not in_fence
+        # Fenced code blocks. Only the same marker type and an equal or
+        # longer run can close a fence.
+        fence_match = FENCE_RE.match(raw)
+
+        if fence_marker is not None:
+            segments.append((False, raw, newline, ""))
+
+            if fence_match:
+                marker, remainder = fence_match.groups()
+
+                if (
+                    marker[0] == fence_marker[0]
+                    and len(marker) >= len(fence_marker)
+                    and not remainder.strip()
+                ):
+                    fence_marker = None
+
+            continue
+
+        if fence_match:
+            fence_marker = fence_match.group(1)
             segments.append((False, raw, newline, ""))
             continue
 
         # Preserve code blocks, blank lines, HTML-only lines,
         # and Markdown separators.
         if (
-            in_fence
-            or INDENTED_CODE_RE.match(raw)
+            INDENTED_CODE_RE.match(raw)
             or not raw.strip()
             or HTML_ONLY_RE.match(raw)
             or SEPARATOR_RE.match(raw)
@@ -243,11 +276,19 @@ def translate_texts(texts, direction, batch_size=4):
             f"Unknown NLLB target language token: {target_lang}"
         )
 
-    output = []
+    expanded_texts = []
+    owners = []
+
+    for owner, text in enumerate(texts):
+        for chunk in chunk_text(text, tokenizer):
+            expanded_texts.append(chunk)
+            owners.append(owner)
+
+    translated_chunks = []
 
     with torch.inference_mode():
-        for start in range(0, len(texts), batch_size):
-            batch = texts[start : start + batch_size]
+        for start in range(0, len(expanded_texts), batch_size):
+            batch = expanded_texts[start : start + batch_size]
 
             encoded = tokenizer(
                 batch,
@@ -269,9 +310,55 @@ def translate_texts(texts, direction, batch_size=4):
                 skip_special_tokens=True,
             )
 
-            output.extend(translated_batch)
+            translated_chunks.extend(translated_batch)
 
-    return output
+    grouped = [[] for _ in texts]
+
+    for owner, translated in zip(owners, translated_chunks):
+        grouped[owner].append(translated)
+
+    return [" ".join(chunks) for chunks in grouped]
+
+
+def chunk_text(text, tokenizer, max_tokens=480):
+    """Split long model inputs without silently truncating content."""
+    if len(tokenizer.encode(text, add_special_tokens=False)) <= max_tokens:
+        return [text]
+
+    words = text.split()
+    chunks = []
+    current = []
+
+    for word in words:
+        candidate = " ".join([*current, word])
+
+        if (
+            current
+            and len(
+                tokenizer.encode(
+                    candidate,
+                    add_special_tokens=False,
+                )
+            ) > max_tokens
+        ):
+            chunks.append(" ".join(current))
+            current = [word]
+        else:
+            current.append(word)
+
+    if current:
+        chunks.append(" ".join(current))
+
+    if any(
+        len(tokenizer.encode(chunk, add_special_tokens=False)) > max_tokens
+        for chunk in chunks
+    ):
+        raise RuntimeError(
+            "A single README token exceeds the translation model's "
+            "input limit. Break the long token into smaller text."
+        )
+
+    return chunks
 
 
 def translate_markdown(
