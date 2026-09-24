@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Translate README
-        uses: choiwlsd/readme-translate-kr-en@v0.2.2
+        uses: choiwlsd/readme-translate-kr-en@v0.2.3
         with:
           source-file: README.md
 
@@ -97,7 +97,7 @@ The first run downloads the translation model. Later runs reuse the Hugging Face
 ### English to Korean
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.2
+- uses: choiwlsd/readme-translate-kr-en@v0.2.3
   with:
     from: en
     source-file: README.md
@@ -108,7 +108,7 @@ The default target is `README.ko.md`.
 ### Korean to English
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.2
+- uses: choiwlsd/readme-translate-kr-en@v0.2.3
   with:
     from: ko
     source-file: README.ko.md
@@ -119,7 +119,7 @@ The default target is `README.md`.
 ### Custom filenames
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.2
+- uses: choiwlsd/readme-translate-kr-en@v0.2.3
   with:
     from: ko
     source-file: docs/README.md
@@ -131,7 +131,7 @@ The default target is `README.md`.
 Omit `from` and `source-file` to detect a single changed standard README from the latest commit:
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.2
+- uses: choiwlsd/readme-translate-kr-en@v0.2.3
 ```
 
 Use `fetch-depth: 2` when relying on automatic detection:
@@ -201,10 +201,10 @@ The unit tests do not download or load the translation models.
 
 ## Release
 
-The current Marketplace release is [`v0.2.2`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.2). Pinning the full release tag gives reproducible behavior:
+The current Marketplace release is [`v0.2.3`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.3). Pinning the full release tag gives reproducible behavior:
 
 ```yaml
-uses: choiwlsd/readme-translate-kr-en@v0.2.2
+uses: choiwlsd/readme-translate-kr-en@v0.2.3
 ```
 
 ## License
