@@ -9,7 +9,7 @@
 </p>
 <!-- readme-translate-kr-en:end -->
 
-# 👊readme-translate-kr-en
+# readme-translate-kr-en
 
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-readme--translate--kr--en-blue?logo=github)](https://github.com/marketplace/actions/readme-translate-kr-en))
 [![GitHub release](https://img.shields.io/github/v/release/choiwlsd/readme-translate-kr-en)](https://github.com/choiwlsd/readme-translate-kr-en/releases/latest))
