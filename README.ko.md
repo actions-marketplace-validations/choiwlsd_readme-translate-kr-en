@@ -25,7 +25,7 @@
 번역하고자 하는 README를 포함하는 저장소에 `.github/workflows/translate-readme.yml`를 생성한다.
 
 ```yaml
-name: Sync Korean README
+name: Sync bilingual README
 
 on:
   push:
@@ -49,16 +49,15 @@ jobs:
       - name: Translate README
         uses: choiwlsd/readme-translate-kr-en@v0.2.0
         with:
-          from: en
           source-file: README.md
 
       - name: Commit translated README
         run: |
-          if git diff --quiet -- README.md README.ko.md; then exit 0; fi
+          if [ -z "$(git status --porcelain -- README.md README.en.md README.ko.md)" ]; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md README.ko.md
-          git commit -m "docs: sync Korean README"
+          git add README.md README.*.md
+          git commit -m "docs: sync bilingual README"
           git push
 ```
 
@@ -67,13 +66,15 @@ jobs:
 워크플로우 파일을 추가하는 것은 `README.md`가 변경되지 않은 경우 즉시 실행되지 않는다. 워크플로우 파일을 커밋하고 디폴트 브랜치로 푸시한 후:
 
 1. GitHub에서 저장소의 **Actions** 탭을 열십시오.
-2. **Sync Korean README**을 선택합니다.
+2. **동기 이중 언어 README**을 선택합니다.
 3. **Run workflow**를 선택하고, 디폴트 브랜치를 선택하여 실행합니다.
-4. 워크플로우가 끝날 때까지 기다립니다. `README.md`에 대한 다른 편집이 필요없이 `README.ko.md`를 생성하고 커밋합니다.
+4. 워크플로우가 끝날 때까지 기다립니다. `README.md`에서 우세한 언어를 감지한 다음 영어 소스 콘텐츠에 대한 `README.ko.md` 또는 한국어 소스 콘텐츠에 대한 `README.en.md`를 생성하고 커밋합니다.
 
 **Run 워크플로우** 버튼이 이용 가능하기 전에 워크플로우가 디폴트 브랜치 상에 존재해야 한다. 커밋 단계가 거부되면, **설정 → 액션 → 일반 → 워크플로우 권한**을 열고 GitHub 액션이 리포지터리 콘텐츠를 기록하는 것이 허용되는지 확인한다. 조직 정책 또는 브랜치 보호는 여전히 직접 푸시를 방지할 수 있다.
 
 첫 번째 번역 후 `README.md`를 변경하는 후속 푸시마다 워크플로우가 자동으로 실행됩니다. 또한 소스 README를 편집하지 않고 번역을 재생성할 때마다 **Run 워크플로우**를 다시 사용할 수 있습니다.
+
+콘텐츠 기반 언어 검출을 원할 때 `from`를 설정하지 않는다. `from: en` 또는 `from: ko`를 설정하면 의도적으로 검출을 무시하고 언어를 소싱한다. 마크다운 코드 블록, URL, HTML 및 기타 비언어 콘텐츠는 한글 및 영어 문자를 계산하기 전에 가능한 한 배제한다.
 
 첫 번째 실행은 번역 모델을 다운로드합니다. 이후 실행은 액션에서 관리하는 Hugging Face 모델 캐시를 재사용합니다.
 
