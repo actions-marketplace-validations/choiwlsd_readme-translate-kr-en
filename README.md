@@ -53,39 +53,9 @@ jobs:
           fetch-depth: 0
 
       - name: Translate README
-        uses: choiwlsd/readme-translate-kr-en@v0.2.4
+        uses: choiwlsd/readme-translate-kr-en@v0.2.5
         with:
           source-file: README.md
-
-      - name: Commit translated README
-        run: |
-          if [ -z "$(git status --porcelain -- README.md README.en.md README.ko.md)" ]; then
-            echo "No README changes."
-            exit 0
-          fi
-
-          base_sha="$(git rev-parse HEAD)"
-          branch="${GITHUB_REF_NAME}"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md README.*.md
-          git commit -m "docs: sync bilingual README"
-
-          git fetch origin "$branch"
-          remote_sha="$(git rev-parse "origin/$branch")"
-
-          if [ "$remote_sha" != "$base_sha" ]; then
-            if ! git diff --quiet "$base_sha" "$remote_sha" -- README.md README.en.md README.ko.md; then
-              echo "README changed while translation was running."
-              echo "Skipping this stale result; the newer workflow run will translate it."
-              exit 0
-            fi
-
-            git rebase "origin/$branch"
-          fi
-
-          git push origin "HEAD:$branch"
 ```
 
 ### Create the first translation
@@ -95,9 +65,9 @@ Adding the workflow file does not immediately run it when `README.md` has not ch
 1. Open the repository's **Actions** tab on GitHub.
 2. Select **Sync bilingual README**.
 3. Select **Run workflow**, choose the default branch, and run it.
-4. Wait for the workflow to finish. It detects the dominant language in `README.md`, then creates and commits `README.ko.md` for English source content or `README.en.md` for Korean source content.
+4. Wait for the workflow to finish. It detects the dominant language in `README.md`, then creates, commits, and pushes `README.ko.md` for English source content or `README.en.md` for Korean source content.
 
-The workflow must exist on the default branch before the **Run workflow** button is available. If the commit step is denied, open **Settings → Actions → General → Workflow permissions** and make sure GitHub Actions is allowed to write repository contents. Organization policy or branch protection can still prevent direct pushes.
+The workflow must exist on the default branch before the **Run workflow** button is available. If the push is denied, open **Settings → Actions → General → Workflow permissions** and make sure GitHub Actions is allowed to write repository contents. Organization policy or branch protection can still prevent direct pushes.
 
 After the first translation, every later push that changes `README.md` runs the workflow automatically. You can also use **Run workflow** again whenever you want to regenerate the translation without editing the source README.
 
@@ -115,6 +85,8 @@ The first run downloads the translation model. Later runs reuse the Hugging Face
 - Automatic translated README filename selection
 - Custom source and target paths
 - Automatic translation direction detection from the latest commit
+- Safe automatic commit, fetch, rebase, and push
+- Stale translation detection when a README changes during a run
 - Preserves fenced code, inline code, inline and reference links, images, badges, HTML, emphasis, YAML front matter, and emoji
 - Adds English / 한국어 navigation to generated README files
 - Caches downloaded Hugging Face models between runs
@@ -124,7 +96,7 @@ The first run downloads the translation model. Later runs reuse the Hugging Face
 ### English to Korean
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.4
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
   with:
     from: en
     source-file: README.md
@@ -135,7 +107,7 @@ The default target is `README.ko.md`.
 ### Korean to English
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.4
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
   with:
     from: ko
     source-file: README.ko.md
@@ -146,7 +118,7 @@ The default target is `README.md`.
 ### Custom filenames
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.4
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
   with:
     from: ko
     source-file: docs/README.md
@@ -158,15 +130,15 @@ The default target is `README.md`.
 Omit `from` and `source-file` to detect a single changed standard README from the latest commit:
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.4
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
 ```
 
-Use `fetch-depth: 2` when relying on automatic detection:
+Use `fetch-depth: 0` when relying on automatic detection and automatic push:
 
 ```yaml
 - uses: actions/checkout@v7
   with:
-    fetch-depth: 2
+    fetch-depth: 0
 ```
 
 If more than one standard README changed in the latest commit, specify `from` and `source-file` explicitly.
@@ -179,12 +151,23 @@ If more than one standard README changed in the latest commit, specify `from` an
 | `source-file`    | No       | Auto-detect or `README.md` | Source README path                            |
 | `target-file`    | No       | Generated automatically    | Translated README path                        |
 | `python-version` | No       | `3.11`                     | Python version used by the translation engine |
+| `push-changes`   | No       | `true`                     | Safely commit and push translated files       |
+| `commit-message` | No       | `docs: sync bilingual README` | Commit message for translated files        |
 
 ## How it works
 
 The Action installs the Python translation dependencies, restores the cached Hugging Face model, protects Markdown elements, translates human-readable text, and writes the translated README back to the checked-out repository.
 
-The Action modifies files only. Committing and pushing the result remains under the caller workflow's control.
+By default, the Action commits and pushes only the source and translated README files. Before pushing, it fetches the current branch. If unrelated remote commits appeared during translation, it rebases and pushes the translation. If either README changed remotely, it skips the stale result so the newer workflow run can translate the latest content.
+
+To manage commits yourself, disable automatic push:
+
+```yaml
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
+  with:
+    source-file: README.md
+    push-changes: false
+```
 
 Dedicated NLLB-based models are used for each direction:
 
@@ -228,10 +211,10 @@ The unit tests do not download or load the translation models.
 
 ## Release
 
-The current Marketplace release is [`v0.2.4`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.4). Pinning the full release tag gives reproducible behavior:
+The current Marketplace release is [`v0.2.5`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.5). Pinning the full release tag gives reproducible behavior:
 
 ```yaml
-uses: choiwlsd/readme-translate-kr-en@v0.2.4
+uses: choiwlsd/readme-translate-kr-en@v0.2.5
 ```
 
 ## License
