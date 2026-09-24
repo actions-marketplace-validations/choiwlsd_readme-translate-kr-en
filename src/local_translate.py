@@ -23,14 +23,23 @@ LANGUAGES = {
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
 HTML_ONLY_RE = re.compile(r"^\s*<[^>]+>\s*$")
 SEPARATOR_RE = re.compile(r"^\s*[:\-| ]+\s*$")
+REFERENCE_DEFINITION_RE = re.compile(
+    r'^\s{0,3}\[[^\]\n]+\]:\s*\S+(?:\s+(?:["\'(].*["\')]|\S.*))?\s*$'
+)
 
 INLINE_TOKEN_RE = re.compile(
     r"(`[^`\n]+`|"
-    r"!?\[[^\]]*\]\([^)]*\)|"
-    r"https?://\S+|"
+    r"!?\[[^\]\n]*\]\[[^\]\n]*\]|"
+    r"!?\[[^\]\n]*\]\([^()\n]*(?:\([^()\n]*\)[^()\n]*)*\)|"
+    r"https?://[^\s<>]+|"
     r"www\.\S+|"
-    r"<https?://[^>]+>|"
-    r"<[^>\n]+>)"
+    r"<(?:https?://|mailto:)[^>]+>|"
+    r"<[^>\n]+>|"
+    r"(?:\*\*|__|~~|(?<!\*)\*(?!\*)|(?<!_)_(?!_))|"
+    r"(?:[\U0001F1E6-\U0001F1FF]{2}|"
+    r"[\U0001F300-\U0001FAFF\u2600-\u27BF]"
+    r"(?:\uFE0F|\uFE0E)?(?:\u200D[\U0001F300-\U0001FAFF\u2600-\u27BF]"
+    r"(?:\uFE0F|\uFE0E)?)*))"
 )
 
 PREFIX_RE = re.compile(
@@ -48,7 +57,10 @@ def protect_inline(text):
     protected = []
 
     def replace(match):
-        token = f"__RB_TOKEN_{len(protected)}__"
+        token = (
+            "https://readme-translate.invalid/"
+            f"protected/{len(protected)}"
+        )
         protected.append(match.group(0))
         return token
 
@@ -57,7 +69,18 @@ def protect_inline(text):
 
 def restore_inline(text, protected):
     for index, value in enumerate(protected):
-        token = f"__RB_TOKEN_{index}__"
+        token = (
+            "https://readme-translate.invalid/"
+            f"protected/{index}"
+        )
+
+        if token not in text:
+            raise RuntimeError(
+                "The translation model removed protected Markdown "
+                f"content token {index}; refusing to write a "
+                "corrupted README."
+            )
+
         text = text.replace(token, value)
 
     return text
@@ -66,10 +89,27 @@ def restore_inline(text, protected):
 def split_markdown(markdown):
     segments = []
     in_fence = False
+    in_frontmatter = False
 
-    for line in markdown.splitlines(keepends=True):
+    for line_number, line in enumerate(
+        markdown.splitlines(keepends=True)
+    ):
         raw = line.rstrip("\r\n")
         newline = line[len(raw):]
+
+        # Preserve YAML front matter at the start of a document.
+        if line_number == 0 and raw.strip() == "---":
+            in_frontmatter = True
+            segments.append((False, raw, newline, ""))
+            continue
+
+        if in_frontmatter:
+            segments.append((False, raw, newline, ""))
+
+            if raw.strip() in {"---", "..."}:
+                in_frontmatter = False
+
+            continue
 
         # Fenced code blocks
         if FENCE_RE.match(raw):
@@ -84,6 +124,7 @@ def split_markdown(markdown):
             or not raw.strip()
             or HTML_ONLY_RE.match(raw)
             or SEPARATOR_RE.match(raw)
+            or REFERENCE_DEFINITION_RE.match(raw)
         ):
             segments.append((False, raw, newline, ""))
             continue

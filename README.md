@@ -9,7 +9,7 @@
 </p>
 <!-- readme-translate-kr-en:end -->
 
-# readme-translate-kr-en
+# 👊readme-translate-kr-en
 
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-readme--translate--kr--en-blue?logo=github)](https://github.com/marketplace/actions/readme-translate-kr-en)
 [![GitHub release](https://img.shields.io/github/v/release/choiwlsd/readme-translate-kr-en)](https://github.com/choiwlsd/readme-translate-kr-en/releases/latest)
@@ -88,7 +88,7 @@ The first run downloads the translation model. Later runs reuse the Hugging Face
 - Automatic translated README filename selection
 - Custom source and target paths
 - Automatic translation direction detection from the latest commit
-- Preserves fenced code, inline code, URLs, links, badges, and HTML where possible
+- Preserves fenced code, inline code, inline and reference links, images, badges, HTML, emphasis, YAML front matter, and emoji
 - Adds English / 한국어 navigation to generated README files
 - Caches downloaded Hugging Face models between runs
 
@@ -146,12 +146,12 @@ If more than one standard README changed in the latest commit, specify `from` an
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `from` | No | Auto-detect | Source language: `en` or `ko` |
-| `source-file` | No | Auto-detect or `README.md` | Source README path |
-| `target-file` | No | Generated automatically | Translated README path |
-| `python-version` | No | `3.11` | Python version used by the translation engine |
+| Input            | Required | Default                    | Description                                   |
+| ---------------- | -------- | -------------------------- | --------------------------------------------- |
+| `from`           | No       | Auto-detect                | Source language: `en` or `ko`                 |
+| `source-file`    | No       | Auto-detect or `README.md` | Source README path                            |
+| `target-file`    | No       | Generated automatically    | Translated README path                        |
+| `python-version` | No       | `3.11`                     | Python version used by the translation engine |
 
 ## How it works
 
@@ -161,8 +161,8 @@ The Action modifies files only. Committing and pushing the result remains under 
 
 Dedicated NLLB-based models are used for each direction:
 
-| Direction | Model |
-| --- | --- |
+| Direction        | Model                        |
+| ---------------- | ---------------------------- |
 | English → Korean | `NHNDQ/nllb-finetuned-en2ko` |
 | Korean → English | `NHNDQ/nllb-finetuned-ko2en` |
 
