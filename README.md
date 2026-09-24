@@ -49,6 +49,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Translate README
         uses: choiwlsd/readme-translate-kr-en@v0.2.4
@@ -57,12 +59,33 @@ jobs:
 
       - name: Commit translated README
         run: |
-          if [ -z "$(git status --porcelain -- README.md README.en.md README.ko.md)" ]; then exit 0; fi
+          if [ -z "$(git status --porcelain -- README.md README.en.md README.ko.md)" ]; then
+            echo "No README changes."
+            exit 0
+          fi
+
+          base_sha="$(git rev-parse HEAD)"
+          branch="${GITHUB_REF_NAME}"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md README.*.md
           git commit -m "docs: sync bilingual README"
-          git push
+
+          git fetch origin "$branch"
+          remote_sha="$(git rev-parse "origin/$branch")"
+
+          if [ "$remote_sha" != "$base_sha" ]; then
+            if ! git diff --quiet "$base_sha" "$remote_sha" -- README.md README.en.md README.ko.md; then
+              echo "README changed while translation was running."
+              echo "Skipping this stale result; the newer workflow run will translate it."
+              exit 0
+            fi
+
+            git rebase "origin/$branch"
+          fi
+
+          git push origin "HEAD:$branch"
 ```
 
 ### Create the first translation

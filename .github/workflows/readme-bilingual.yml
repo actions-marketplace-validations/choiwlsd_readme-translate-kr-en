@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Translate README locally
         uses: ./
@@ -44,8 +44,26 @@ jobs:
             echo "No README changes."
             exit 0
           fi
+
+          base_sha="$(git rev-parse HEAD)"
+          branch="${GITHUB_REF_NAME}"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md README.ko.md
           git commit -m "docs: sync bilingual README"
-          git push
+
+          git fetch origin "$branch"
+          remote_sha="$(git rev-parse "origin/$branch")"
+
+          if [ "$remote_sha" != "$base_sha" ]; then
+            if ! git diff --quiet "$base_sha" "$remote_sha" -- README.md README.ko.md; then
+              echo "README changed while translation was running."
+              echo "Skipping this stale result; the newer workflow run will translate it."
+              exit 0
+            fi
+
+            git rebase "origin/$branch"
+          fi
+
+          git push origin "HEAD:$branch"
