@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Translate README
-        uses: choiwlsd/readme-translate-kr-en@v0.2.1
+        uses: choiwlsd/readme-translate-kr-en@v0.2.2
         with:
           source-file: README.md
 
@@ -97,7 +97,7 @@ jobs:
 ### 영어에서 한국어로
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.1
+- uses: choiwlsd/readme-translate-kr-en@v0.2.2
   with:
     from: en
     source-file: README.md
@@ -108,7 +108,7 @@ jobs:
 ### 한국어에서 영어로
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.1
+- uses: choiwlsd/readme-translate-kr-en@v0.2.2
   with:
     from: ko
     source-file: README.ko.md
@@ -119,7 +119,7 @@ jobs:
 ### 커스텀 파일네임
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.1
+- uses: choiwlsd/readme-translate-kr-en@v0.2.2
   with:
     from: ko
     source-file: docs/README.md
@@ -131,7 +131,7 @@ jobs:
 최신 커밋에서 단일 변경된 표준 README를 검출하려면 `from` 및 `source-file`을 생략한다.
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.1
+- uses: choiwlsd/readme-translate-kr-en@v0.2.2
 ```
 
 자동 검출에 의존할 때 `fetch-depth: 2`을 사용하세요.
@@ -201,10 +201,10 @@ npm test
 
 ## 방출
 
-현재 마켓플레이스 릴리스는 [`v0.2.1`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.1)입니다. 전체 릴리스 태그를 고정하면 재현 가능한 동작이 제공됩니다.
+현재 마켓플레이스 릴리스는 [`v0.2.2`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.2)입니다. 전체 릴리스 태그를 고정하면 재현 가능한 동작이 제공됩니다.
 
 ```yaml
-uses: choiwlsd/readme-translate-kr-en@v0.2.1
+uses: choiwlsd/readme-translate-kr-en@v0.2.2
 ```
 
 ## 라이선스
