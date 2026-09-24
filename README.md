@@ -37,6 +37,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: readme-translation-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   translate:
     if: github.actor != 'github-actions[bot]'
