@@ -53,39 +53,9 @@ jobs:
           fetch-depth: 0
 
       - name: Translate README
-        uses: choiwlsd/readme-translate-kr-en@v0.2.4
+        uses: choiwlsd/readme-translate-kr-en@v0.2.5
         with:
           source-file: README.md
-
-      - name: Commit translated README
-        run: |
-          if [ -z "$(git status --porcelain -- README.md README.en.md README.ko.md)" ]; then
-            echo "No README changes."
-            exit 0
-          fi
-
-          base_sha="$(git rev-parse HEAD)"
-          branch="${GITHUB_REF_NAME}"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md README.*.md
-          git commit -m "docs: sync bilingual README"
-
-          git fetch origin "$branch"
-          remote_sha="$(git rev-parse "origin/$branch")"
-
-          if [ "$remote_sha" != "$base_sha" ]; then
-            if ! git diff --quiet "$base_sha" "$remote_sha" -- README.md README.en.md README.ko.md; then
-              echo "README changed while translation was running."
-              echo "Skipping this stale result; the newer workflow run will translate it."
-              exit 0
-            fi
-
-            git rebase "origin/$branch"
-          fi
-
-          git push origin "HEAD:$branch"
 ```
 
 ### 첫 번째 번역을 생성합니다.
@@ -95,9 +65,9 @@ jobs:
 1. 창고 열어봐. **액션** GitHub의 탭.
 2. 선택 **동기화 이중 언어 리드미**.
 3. 선택 **실행 워크플로우**, 기본 브랜치를 선택하여 실행하세요.
-4. 워크플로가 끝날 때까지 기다립니다. 그것은 지배적인 언어를 감지합니다. `README.md`, 그런 다음 생성 및 커밋 `README.ko.md` 영어 소스 콘텐츠 또는 `README.en.md` 한국어 소스 콘텐츠에 대해.
+4. 워크플로가 끝날 때까지 기다립니다. 그것은 지배적인 언어를 감지합니다. `README.md`, 그런 다음 생성, 커밋 및 푸시 `README.ko.md` 영어 소스 콘텐츠 또는 `README.en.md` 한국어 소스 콘텐츠에 대해.
 
-워크플로는 디폴트 브랜치에 존재해야 한다. **실행 워크플로우** 버튼이 있습니다. 커밋 단계가 거부되면 열립니다. **설정 → 액션 → 일반 → 워크플로우 권한** 그리고 GitHub 액션이 저장소 콘텐츠를 작성하는 데 허용되는지 확인하십시오. 조직 정책 또는 지점 보호는 여전히 직접 푸시를 방지할 수 있습니다.
+워크플로는 디폴트 브랜치에 존재해야 한다. **실행 워크플로우** 버튼이 있습니다. 누름이 거부되면 열립니다. **설정 → 액션 → 일반 → 워크플로우 권한** 그리고 GitHub 액션이 저장소 콘텐츠를 작성하는 데 허용되는지 확인하십시오. 조직 정책 또는 지점 보호는 여전히 직접 푸시를 방지할 수 있습니다.
 
 첫 번째 번역 후, 나중에 푸시할 때마다 변경됩니다. `README.md` 워크플로를 자동으로 실행합니다. 또한 사용할 수 있습니다. **실행 워크플로우** 소스 README를 편집하지 않고 번역본을 재생성하고 싶을 때마다 다시 한 번 사용하세요.
 
@@ -115,6 +85,8 @@ jobs:
 - 자동 번역된 README 파일명 선택
 - 맞춤형 소스 및 타겟 경로
 - 최신 커밋으로부터의 자동 번역 방향 검출
+- 안전한 자동 커밋, 페치, 리베이스 및 푸시
+- 실행 중에 README가 변경될 때 스테일 번역 검출
 - 울타리 코드, 인라인 코드, 인라인 및 참조 링크, 이미지, 배지, HTML, 강조점, YAML 전면 사항 및 이모지를 보존합니다.
 - 생성된 README 파일에 영어/ 한국어 네비게이션을 추가합니다
 - 실행 사이에 껴안는 얼굴 모델을 다운로드한 캐시
@@ -124,7 +96,7 @@ jobs:
 ### 영어에서 한국어로
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.4
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
   with:
     from: en
     source-file: README.md
@@ -135,7 +107,7 @@ jobs:
 ### 한국어에서 영어로
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.4
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
   with:
     from: ko
     source-file: README.ko.md
@@ -146,7 +118,7 @@ jobs:
 ### 커스텀 파일네임
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.4
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
   with:
     from: ko
     source-file: docs/README.md
@@ -158,15 +130,15 @@ jobs:
 생략 `from` 그리고. `source-file` 최신 커밋으로부터 단일 변경된 표준 README를 검출하기 위해:
 
 ```yaml
-- uses: choiwlsd/readme-translate-kr-en@v0.2.4
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
 ```
 
-사용 `fetch-depth: 2` 자동 검출에 의존할 때:
+사용 `fetch-depth: 0` 자동 감지 및 자동 푸시에 의존할 때:
 
 ```yaml
 - uses: actions/checkout@v7
   with:
-    fetch-depth: 2
+    fetch-depth: 0
 ```
 
 최신 커밋에서 하나 이상의 표준 README가 변경된 경우 지정 `from` 그리고. `source-file` 노골적으로.
@@ -179,12 +151,23 @@ jobs:
 | `source-file`    | 아니야.       | 자동 검출 또는 `README.md` | 소스 리드미 경로                            |
 | `target-file`    | 아니야.       | 자동으로 생성    | 번역된 README 경로                        |
 | `python-version` | 아니야.       | `3.11`                     | 번역 엔진에 의해 사용되는 파이썬 버전 |
+| `push-changes`   | 아니야.       | `true`                     | 번역된 파일을 안전하게 커밋하고 푸시합니다       |
+| `commit-message` | 아니야.       | `docs: sync bilingual README` | 번역된 파일에 대한 커밋 메시지        |
 
 ## 어떻게 작동하는지.
 
 액션은 파이썬 번역 의존성을 설치하고, 캐싱된 Hugging Face 모델을 복원하고, Markdown 요소를 보호하며, 사람이 읽을 수 있는 텍스트를 번역하고, 번역된 README를 다시 확인된 저장소에 기록한다.
 
-액션은 파일만 수정합니다. 결과를 수행하고 푸시하는 것은 호출자 워크플로우의 제어 하에 남아 있습니다.
+디폴트로, 액션은 소스 및 번역된 README 파일만을 커밋하고 푸시한다. 푸시하기 전에 현재 브랜치를 가져온다. 관련 없는 원격 커밋이 번역 중에 나타나면 번역을 재기반하고 푸시한다. README 중 하나가 원격으로 변경되면 오래된 결과를 건너뛰어 새로운 워크플로우 실행이 최신 콘텐츠를 번역할 수 있다.
+
+커밋을 직접 관리하려면 자동 푸시를 비활성화합니다.
+
+```yaml
+- uses: choiwlsd/readme-translate-kr-en@v0.2.5
+  with:
+    source-file: README.md
+    push-changes: false
+```
 
 각 방향에 대해 전용 NLLB 기반 모델이 사용된다.
 
@@ -228,10 +211,10 @@ npm test
 
 ## 방출
 
-현재 마켓플레이스 릴리스는 [`v0.2.4`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.4). 풀 릴리스 태그를 붙이는 것은 재현 가능한 동작을 제공합니다.
+현재 마켓플레이스 릴리스는 [`v0.2.5`](https://github.com/choiwlsd/readme-translate-kr-en/releases/tag/v0.2.5). 풀 릴리스 태그를 붙이는 것은 재현 가능한 동작을 제공합니다.
 
 ```yaml
-uses: choiwlsd/readme-translate-kr-en@v0.2.4
+uses: choiwlsd/readme-translate-kr-en@v0.2.5
 ```
 
 ## 라이선스
