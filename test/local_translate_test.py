@@ -136,6 +136,48 @@ class LocalTranslateTest(unittest.TestCase):
         self.assertIn("<sub>2025. 05.</sub>", out)
         self.assertIn('href="mailto:test@example.com"', out)
         self.assertIn('src="https://example.com/icon.svg"', out)
+        self.assertIn("🏆 KO:Awards", out)
+        self.assertIn("KO:경희대학교 <a", out)
+        self.assertIn("</a> ", out)
+        self.assertIn("</strong> <sub>", out)
+
+    def test_preserves_table_pipes_inline_code_and_entities(self):
+        received = []
+
+        def recording_translator(texts, direction):
+            received.extend(texts)
+            return [f"KO:{text}" for text in texts]
+
+        src = (
+            "| Name | Example |\n"
+            "| --- | --- |\n"
+            "| Parser | `left|right` and A\\|B &nbsp; |\n"
+        )
+        out = mod.translate_markdown(
+            src,
+            "en-to-ko",
+            translator=recording_translator,
+        )
+
+        model_input = "".join(received)
+        self.assertNotIn("|", model_input)
+        self.assertNotIn("&nbsp;", model_input)
+        self.assertNotIn("`left|right`", model_input)
+        self.assertEqual(src.count("|"), out.count("|"))
+        self.assertIn("`left|right`", out)
+        self.assertEqual(src.count("\\|"), out.count("\\|"))
+        self.assertIn("&nbsp;", out)
+
+    def test_preserves_indented_code(self):
+        src = "Example:\n\n    npm install package\n\nAfterward.\n"
+        out = mod.translate_markdown(
+            src,
+            "en-to-ko",
+            translator=fake_translate,
+        )
+
+        self.assertIn("    npm install package", out)
+        self.assertNotIn("KO:npm install package", out)
 
 
 if __name__ == "__main__":

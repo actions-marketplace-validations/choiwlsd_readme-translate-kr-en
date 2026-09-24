@@ -21,6 +21,7 @@ LANGUAGES = {
 
 
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
+INDENTED_CODE_RE = re.compile(r"^(?: {4}|\t)\S")
 HTML_ONLY_RE = re.compile(r"^\s*<[^>]+>\s*$")
 SEPARATOR_RE = re.compile(r"^\s*[:\-| ]+\s*$")
 REFERENCE_DEFINITION_RE = re.compile(
@@ -29,6 +30,8 @@ REFERENCE_DEFINITION_RE = re.compile(
 
 INLINE_TOKEN_RE = re.compile(
     r"(`[^`\n]+`|"
+    r"(?:\\\||(?<!\\)\|)|"
+    r"&(?:#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]+);|"
     r"!?\[[^\]\n]*\]\[[^\]\n]*\]|"
     r"!?\[[^\]\n]*\]\([^()\n]*(?:\([^()\n]*\)[^()\n]*)*\)|"
     r"https?://[^\s<>]+|"
@@ -72,9 +75,26 @@ def split_inline(text):
 
 
 def append_text_piece(pieces, value):
-    # Punctuation, spacing, and dates do not need translation.
-    should_translate = bool(re.search(r"[A-Za-z가-힣]", value))
-    pieces.append((should_translate, value))
+    # Models commonly trim surrounding whitespace. Keep it outside the
+    # translated fragment so markup boundaries do not collapse.
+    leading = value[: len(value) - len(value.lstrip())]
+    trailing = value[len(value.rstrip()):]
+    core = value.strip()
+
+    if not core:
+        pieces.append((False, value))
+        return
+
+    if leading:
+        pieces.append((False, leading))
+
+    if core:
+        # Punctuation and dates do not need translation.
+        should_translate = bool(re.search(r"[A-Za-z가-힣]", core))
+        pieces.append((should_translate, core))
+
+    if trailing:
+        pieces.append((False, trailing))
 
 
 def rebuild_inline(pieces, translated_iter):
@@ -138,53 +158,13 @@ def split_markdown(markdown):
         # and Markdown separators.
         if (
             in_fence
+            or INDENTED_CODE_RE.match(raw)
             or not raw.strip()
             or HTML_ONLY_RE.match(raw)
             or SEPARATOR_RE.match(raw)
             or REFERENCE_DEFINITION_RE.match(raw)
         ):
             segments.append((False, raw, newline, ""))
-            continue
-
-        # Markdown tables
-        if "|" in raw and raw.count("|") >= 2:
-            parts = raw.split("|")
-            translated_parts = []
-
-            for part in parts:
-                if not part.strip() or SEPARATOR_RE.match(part):
-                    translated_parts.append(
-                        (False, part, "", "")
-                    )
-                    continue
-
-                leading = part[: len(part) - len(part.lstrip())]
-                trailing = part[len(part.rstrip()):]
-                core = part.strip()
-
-                pieces = split_inline(core)
-
-                translated_parts.append(
-                    (
-                        True,
-                        pieces,
-                        "",
-                        (
-                            leading,
-                            trailing,
-                        ),
-                    )
-                )
-
-            segments.append(
-                (
-                    "table",
-                    translated_parts,
-                    newline,
-                    "",
-                )
-            )
-
             continue
 
         # Headings, lists, blockquotes, checkboxes, etc.
@@ -311,14 +291,6 @@ def translate_markdown(
                 if should_translate
             )
 
-        elif kind == "table":
-            for part_kind, part_value, _, _ in value:
-                if part_kind:
-                    texts.extend(
-                        piece
-                        for should_translate, piece in part_value
-                        if should_translate
-                    )
 
     translated_iter = iter(
         translator(
@@ -343,37 +315,6 @@ def translate_markdown(
                 prefix
                 + translated
                 + trailing
-                + newline
-            )
-
-        elif kind == "table":
-            rebuilt = []
-
-            for (
-                part_kind,
-                part_value,
-                _,
-                part_meta,
-            ) in value:
-
-                if not part_kind:
-                    rebuilt.append(part_value)
-                    continue
-
-                leading, trailing = part_meta
-                translated = rebuild_inline(
-                    part_value,
-                    translated_iter,
-                )
-
-                rebuilt.append(
-                    leading
-                    + translated
-                    + trailing
-                )
-
-            output.append(
-                "|".join(rebuilt)
                 + newline
             )
 
