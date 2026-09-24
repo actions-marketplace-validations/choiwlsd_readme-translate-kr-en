@@ -25,7 +25,7 @@ A free, local-first GitHub Action for translating and synchronizing English and 
 Create `.github/workflows/translate-readme.yml` in the repository that contains the README you want to translate:
 
 ```yaml
-name: Sync Korean README
+name: Sync bilingual README
 
 on:
   push:
@@ -49,16 +49,15 @@ jobs:
       - name: Translate README
         uses: choiwlsd/readme-translate-kr-en@v0.2.0
         with:
-          from: en
           source-file: README.md
 
       - name: Commit translated README
         run: |
-          if git diff --quiet -- README.md README.ko.md; then exit 0; fi
+          if [ -z "$(git status --porcelain -- README.md README.en.md README.ko.md)" ]; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md README.ko.md
-          git commit -m "docs: sync Korean README"
+          git add README.md README.*.md
+          git commit -m "docs: sync bilingual README"
           git push
 ```
 
@@ -67,13 +66,15 @@ jobs:
 Adding the workflow file does not immediately run it when `README.md` has not changed. After committing and pushing the workflow file to the default branch:
 
 1. Open the repository's **Actions** tab on GitHub.
-2. Select **Sync Korean README**.
+2. Select **Sync bilingual README**.
 3. Select **Run workflow**, choose the default branch, and run it.
-4. Wait for the workflow to finish. It will create and commit `README.ko.md` without requiring another edit to `README.md`.
+4. Wait for the workflow to finish. It detects the dominant language in `README.md`, then creates and commits `README.ko.md` for English source content or `README.en.md` for Korean source content.
 
 The workflow must exist on the default branch before the **Run workflow** button is available. If the commit step is denied, open **Settings → Actions → General → Workflow permissions** and make sure GitHub Actions is allowed to write repository contents. Organization policy or branch protection can still prevent direct pushes.
 
 After the first translation, every later push that changes `README.md` runs the workflow automatically. You can also use **Run workflow** again whenever you want to regenerate the translation without editing the source README.
+
+Do not set `from` when you want content-based language detection. Setting `from: en` or `from: ko` intentionally overrides detection and forces that source language. Markdown code blocks, URLs, HTML, and other non-language content are excluded as much as possible before Korean and English characters are counted.
 
 The first run downloads the translation model. Later runs reuse the Hugging Face model cache managed by the Action.
 
