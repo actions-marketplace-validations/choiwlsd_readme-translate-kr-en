@@ -11,6 +11,7 @@ import {
 } from './core.js';
 
 import { execFileSync } from 'node:child_process';
+import { appendFileSync } from 'node:fs';
 import { translateMarkdownLocal } from './local.js';
 
 const args = process.argv.slice(2);
@@ -170,7 +171,22 @@ async function sync(flags) {
     ),
   );
 
+  writeGitHubOutput('source-file', source);
+  writeGitHubOutput('target-file', target);
+
   console.log(`Updated ${target}.`);
+}
+
+function writeGitHubOutput(name, value) {
+  const outputFile = process.env.GITHUB_OUTPUT;
+
+  if (!outputFile) return;
+
+  if (value.includes('\n') || value.includes('\r')) {
+    throw new Error(`Cannot write a multiline ${name} path to GITHUB_OUTPUT.`);
+  }
+
+  appendFileSync(outputFile, `${name}=${value}\n`, 'utf8');
 }
 
 function resolveSourcePath(flags) {
