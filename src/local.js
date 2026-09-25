@@ -45,3 +45,57 @@ export async function translateMarkdownLocal({ markdown, direction }) {
     });
   }
 }
+
+export async function translateMarkdownIncrementalLocal({
+  markdown,
+  currentTarget,
+  previousSource,
+  previousGenerated,
+  direction,
+}) {
+  const dir = await fs.mkdtemp(
+    path.join(os.tmpdir(), 'readme-bilingual-incremental-')
+  );
+  const files = {
+    input: path.join(dir, 'input.md'),
+    output: path.join(dir, 'output.md'),
+    currentTarget: path.join(dir, 'current-target.md'),
+    previousSource: path.join(dir, 'previous-source.md'),
+    previousGenerated: path.join(dir, 'previous-generated.md'),
+    generatedOutput: path.join(dir, 'generated-output.md'),
+  };
+
+  await Promise.all([
+    fs.writeFile(files.input, markdown, 'utf8'),
+    fs.writeFile(files.currentTarget, currentTarget, 'utf8'),
+    fs.writeFile(files.previousSource, previousSource, 'utf8'),
+    fs.writeFile(files.previousGenerated, previousGenerated, 'utf8'),
+  ]);
+
+  try {
+    execFileSync(getPythonCommand(), [
+      path.join(here, 'local_translate.py'),
+      '--direction', direction,
+      '--input', files.input,
+      '--output', files.output,
+      '--current-target', files.currentTarget,
+      '--previous-source', files.previousSource,
+      '--previous-generated', files.previousGenerated,
+      '--generated-output', files.generatedOutput,
+    ], {
+      stdio: 'inherit',
+    });
+
+    const [translated, generated] = await Promise.all([
+      fs.readFile(files.output, 'utf8'),
+      fs.readFile(files.generatedOutput, 'utf8'),
+    ]);
+
+    return { translated, generated };
+  } finally {
+    await fs.rm(dir, {
+      recursive: true,
+      force: true,
+    });
+  }
+}

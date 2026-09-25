@@ -1,6 +1,6 @@
 {
   "name": "readme-translate-kr-en",
-  "version": "0.2.0",
+  "version": "0.2.5",
   "description": "Free local-first English/Korean README translation CLI and GitHub Action. No API key required.",
   "repository": {
     "type": "git",
@@ -15,7 +15,7 @@
     "readme-translate-kr-en": "./src/cli.js"
   },
   "scripts": {
-    "test": "node --test test/core.test.js && node ./test/run-python-tests.js",
+    "test": "node --test test/core.test.js test/git-sync.test.js && node ./test/run-python-tests.js",
     "translate": "node ./src/cli.js sync"
   },
   "engines": {

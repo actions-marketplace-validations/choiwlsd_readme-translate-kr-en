@@ -52,6 +52,41 @@ export function detectDirection(changedFiles = []) {
   return "en-to-ko";
 }
 
+export function detectContentLanguage(markdown) {
+  const text = stripNonLanguageContent(markdown);
+
+  const koreanWords =
+    (text.match(/[가-힣]+/g) ?? []).length;
+
+  const englishWords =
+    (text.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/g) ?? []).length;
+
+  if (koreanWords === 0 && englishWords === 0) {
+    throw new Error(
+      "Could not detect README language. Use --from en or --from ko.",
+    );
+  }
+
+  return koreanWords > englishWords
+    ? "ko"
+    : "en";
+}
+
+export function stripNonLanguageContent(markdown) {
+  return markdown
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/~~~[\s\S]*?~~~/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/!\[[^\]]*\]\[[^\]]*\]/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, "$1")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/^\s{0,3}\[[^\]]+\]:.*$/gm, " ");
+}
+
 export async function readUtf8(file) {
   return fs.readFile(file, "utf8");
 }
